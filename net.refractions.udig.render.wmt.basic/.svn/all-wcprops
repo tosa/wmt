@@ -1,0 +1,89 @@
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/udig/!svn/ver/31238/udig/trunk/plugins/net.refractions.udig.render.wms.basic
+END
+plugin_fr.properties
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/udig/!svn/ver/28803/udig/trunk/plugins/net.refractions.udig.render.wms.basic/plugin_fr.properties
+END
+plugin_es.properties
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/udig/!svn/ver/22976/udig/trunk/plugins/net.refractions.udig.render.wms.basic/plugin_es.properties
+END
+.classpath
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/udig/!svn/ver/30999/udig/trunk/plugins/net.refractions.udig.render.wms.basic/.classpath
+END
+Readme.html
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/udig/!svn/ver/25260/udig/trunk/plugins/net.refractions.udig.render.wms.basic/Readme.html
+END
+LICENSE.txt
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/udig/!svn/ver/14527/udig/trunk/plugins/net.refractions.udig.render.wms.basic/LICENSE.txt
+END
+plugin_de.properties
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/udig/!svn/ver/21721/udig/trunk/plugins/net.refractions.udig.render.wms.basic/plugin_de.properties
+END
+plugin_ko.properties
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/udig/!svn/ver/30553/udig/trunk/plugins/net.refractions.udig.render.wms.basic/plugin_ko.properties
+END
+.project
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/udig/!svn/ver/25260/udig/trunk/plugins/net.refractions.udig.render.wms.basic/.project
+END
+usage
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/udig/!svn/ver/25260/udig/trunk/plugins/net.refractions.udig.render.wms.basic/usage
+END
+plugin_it.properties
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/udig/!svn/ver/30946/udig/trunk/plugins/net.refractions.udig.render.wms.basic/plugin_it.properties
+END
+plugin.properties
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/udig/!svn/ver/30879/udig/trunk/plugins/net.refractions.udig.render.wms.basic/plugin.properties
+END
+.options
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/udig/!svn/ver/25260/udig/trunk/plugins/net.refractions.udig.render.wms.basic/.options
+END
+build.properties
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/udig/!svn/ver/30559/udig/trunk/plugins/net.refractions.udig.render.wms.basic/build.properties
+END
+plugin.xml
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/udig/!svn/ver/30889/udig/trunk/plugins/net.refractions.udig.render.wms.basic/plugin.xml
+END

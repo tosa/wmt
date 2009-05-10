@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 128
+/udig/!svn/ver/31238/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/internal/wms/basic
+END
+BasicWMSMetrics2.java
+K 25
+svn:wc:ra_dav:version-url
+V 150
+/udig/!svn/ver/30675/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/internal/wms/basic/BasicWMSMetrics2.java
+END
+BasicWMSRenderer2.java
+K 25
+svn:wc:ra_dav:version-url
+V 151
+/udig/!svn/ver/31238/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/internal/wms/basic/BasicWMSRenderer2.java
+END
+BasicWMSMetricsFactory2.java
+K 25
+svn:wc:ra_dav:version-url
+V 157
+/udig/!svn/ver/30965/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/internal/wms/basic/BasicWMSMetricsFactory2.java
+END
+package.html
+K 25
+svn:wc:ra_dav:version-url
+V 141
+/udig/!svn/ver/25260/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/internal/wms/basic/package.html
+END
+Trace.java
+K 25
+svn:wc:ra_dav:version-url
+V 139
+/udig/!svn/ver/25260/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/internal/wms/basic/Trace.java
+END

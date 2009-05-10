@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+
+     <extension
+         id="BasicWMTRenderer"
+         name="BasicWMTRenderer"
+         point="net.refractions.udig.project.renderer">
+      <renderer
+            class="net.refractions.udig.render.internal.wmt.basic.BasicWMTMetricsFactory"
+            id="net.refractions.udig.render.internal.wmt.basic.basicwmsrenderer"
+            name="%renderer.name">
+         <description>
+            %renderer.desc
+         </description>
+         
+      </renderer>
+  
+      <!--renderer
+            class="net.refractions.udig.render.internal.wms.basic.BasicWMSMetricsFactory2"
+            id="net.refractions.udig.render.internal.wms.basic.wmsrenderer"
+            name="WMS Renderer">
+      </renderer-->
+   </extension>
+     <extension
+           point="org.eclipse.core.runtime.preferences">
+        <initializer class="net.refractions.udig.render.wmt.basic.preferences.PreferenceInitializer"/>
+     </extension>
+</plugin>

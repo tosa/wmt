@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 128
+/udig/!svn/ver/30946/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/wms/basic/internal
+END
+messages.properties
+K 25
+svn:wc:ra_dav:version-url
+V 148
+/udig/!svn/ver/30910/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/wms/basic/internal/messages.properties
+END
+Messages.java
+K 25
+svn:wc:ra_dav:version-url
+V 142
+/udig/!svn/ver/30910/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/wms/basic/internal/Messages.java
+END
+messages_es.properties
+K 25
+svn:wc:ra_dav:version-url
+V 151
+/udig/!svn/ver/25260/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/wms/basic/internal/messages_es.properties
+END
+messages_fr.properties
+K 25
+svn:wc:ra_dav:version-url
+V 151
+/udig/!svn/ver/28803/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/wms/basic/internal/messages_fr.properties
+END
+messages_de.properties
+K 25
+svn:wc:ra_dav:version-url
+V 151
+/udig/!svn/ver/25468/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/wms/basic/internal/messages_de.properties
+END
+messages_ko.properties
+K 25
+svn:wc:ra_dav:version-url
+V 151
+/udig/!svn/ver/30553/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/wms/basic/internal/messages_ko.properties
+END
+messages_it.properties
+K 25
+svn:wc:ra_dav:version-url
+V 151
+/udig/!svn/ver/30946/udig/trunk/plugins/net.refractions.udig.render.wms.basic/src/net/refractions/udig/render/wms/basic/internal/messages_it.properties
+END
