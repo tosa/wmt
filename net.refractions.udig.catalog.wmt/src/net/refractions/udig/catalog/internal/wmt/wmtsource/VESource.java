@@ -4,7 +4,7 @@ public class VESource extends WMTSource {
 
     public VESource() {
         System.out.println("VESource");
-        setText("VESource");
+        setName("VESource");
     }
 
 }

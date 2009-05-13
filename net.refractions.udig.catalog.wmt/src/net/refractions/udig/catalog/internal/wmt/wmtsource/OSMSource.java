@@ -1,10 +1,12 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
-public class OSMSource extends WMTSource {
+public abstract class OSMSource extends WMTSource {
 
     public OSMSource() {
         System.out.println("OSMSource");
-        setText("OSMSource");
+        setName("OSMSource"); //$NON-NLS-1$
     }
+    
+    public abstract String getBaseUrl();
 
 }

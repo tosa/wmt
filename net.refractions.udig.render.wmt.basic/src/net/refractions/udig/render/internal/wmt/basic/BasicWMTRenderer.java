@@ -77,8 +77,8 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         try {
             WMTSource wmtSource;
             wmtSource = resource.resolve(WMTSource.class, null);
-            text = wmtSource.getText();
-        } catch (IOException e) {
+            text = wmtSource.getName();
+        } catch (Exception e) {
             // TODO Handle IOException
             text = null;
         }

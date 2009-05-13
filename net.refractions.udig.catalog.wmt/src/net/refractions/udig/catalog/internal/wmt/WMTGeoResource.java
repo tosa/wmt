@@ -17,11 +17,6 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 
 public class WMTGeoResource extends IGeoResource {
 
-    /** the map graphic name * */
-    private String name;
-
-
-
     private WMTSource source;
     private WMTService wmtService;
     
@@ -36,6 +31,7 @@ public class WMTGeoResource extends IGeoResource {
     public WMTSource getSource(){
         return source;
     }
+    
     /*
      * @see net.refractions.udig.catalog.IResolve#canResolve(java.lang.Class)
      */

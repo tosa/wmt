@@ -43,6 +43,7 @@ class WMTGeoResourceInfo extends IGeoResourceInfo {
     /** WMSResourceInfo resource field */
     private final WMTGeoResource resource;
     @SuppressWarnings("unchecked")
+    
     WMTGeoResourceInfo(WMTGeoResource resource, IProgressMonitor monitor ) throws IOException {
         this.resource = resource;
         

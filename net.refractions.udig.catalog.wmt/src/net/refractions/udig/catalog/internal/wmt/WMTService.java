@@ -24,12 +24,20 @@ import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.catalog.wmt.internal.Messages;
 
 /**
- * Service implementation for map graphics
+ * 
+ * TODO Purpose of 
+ * <p>
+ *
+ * </p>
+ * @author to.srwn
+ * @since 1.1.0
  */
 public class WMTService extends IService {
     public static String ID = "wmt://localhost/wmt/"; //$NON-NLS-1$
         
-    /** Dummy url for a MapGraphic */
+    /** Dummy url for a WMT
+     * (static block because URL constructor can throw exception 
+     */
     public final static URL SERVICE_URL;
     static {
         URL tmp;
@@ -39,7 +47,6 @@ public class WMTService extends IService {
             tmp=null;
             e.printStackTrace();
         }
-        System.out.println("Static-Block: Service_Url set to " + tmp);
         SERVICE_URL=tmp;
     }
 
@@ -54,9 +61,7 @@ public class WMTService extends IService {
     
     private Throwable msg;
     
-    /**
-     * Construct <code>MapGraphicService</code>.
-     */
+
     public WMTService(Map<String, Serializable> params) {
         System.out.println("WMTService");
         if (params != null)
@@ -83,8 +88,7 @@ public class WMTService extends IService {
                     } catch(Throwable t) {
                         msg = t;
                         source = null;
-                    }
-                    
+                    }                    
                 }
             }
         }

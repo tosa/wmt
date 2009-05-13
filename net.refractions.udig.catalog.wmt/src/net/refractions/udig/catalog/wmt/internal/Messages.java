@@ -20,7 +20,9 @@ import org.eclipse.osgi.util.NLS;
 
 public class Messages extends NLS {
 	private static final String BUNDLE_NAME = "net.refractions.udig.catalog.wmt.internal.messages"; //$NON-NLS-1$
-    public static final String MapGraphicService_title = "Titel";
+
+	
+	public static final String MapGraphicService_title = "Titel";
     public static final String MapGraphicService_description = "Description";
 	public static String WMSCServiceExtension_nottiled;
     public static String WMSCWizardPage_WMSCTitle;

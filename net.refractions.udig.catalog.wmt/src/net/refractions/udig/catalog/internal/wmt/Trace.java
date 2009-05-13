@@ -16,5 +16,5 @@ package net.refractions.udig.catalog.internal.wmt;
 public interface Trace {
     /** You may set this to "true" in your .options file */
     public static final String REQUEST =
-        "net.refractions.udig.catalog.wms/debug/request"; //$NON-NLS-1$    
+        "net.refractions.udig.catalog.wmt/debug/request"; //$NON-NLS-1$    
 }

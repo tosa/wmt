@@ -41,7 +41,7 @@ public class WMTServiceExtension implements ServiceExtension {
      */
     public Map<String,Serializable> createParams( URL url ) {
         System.out.println("createParams");//$NON-NLS-1$
-        //todo: check ob es die Klasse gibt
+        //todo: check if the class exists?
         if( url != null && url.toExternalForm().startsWith( WMTService.SERVICE_URL.toExternalForm())){
             Map<String,Serializable> map = new HashMap<String,Serializable>();
             map.put(KEY, url);
