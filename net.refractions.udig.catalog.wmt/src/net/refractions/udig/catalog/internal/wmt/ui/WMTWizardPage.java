@@ -2,13 +2,18 @@
 package net.refractions.udig.catalog.internal.wmt.ui;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
 import net.refractions.udig.catalog.IService;
+import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.WMTServiceExtension;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMCycleMapSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMMapnikSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMOsmarenderSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.catalog.ui.AbstractUDIGImportPage;
 import net.refractions.udig.catalog.ui.CatalogTreeViewer;
 import net.refractions.udig.catalog.ui.UDIGConnectionPage;
@@ -20,9 +25,14 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
 /**
@@ -36,10 +46,9 @@ import org.eclipse.swt.widgets.TreeItem;
  */
 public class WMTWizardPage extends AbstractUDIGImportPage implements Listener, UDIGConnectionPage {
 
-   
-    private CatalogTreeViewer treeviewer;
-    
+      
     private WMTServiceExtension serviceExtension;
+    private Tree tree;
     
 
     public WMTWizardPage() {
@@ -82,122 +91,202 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements Listener, U
         return super.leavingPage();
     }
 
-
+    /**
+     * Loops the tree and returns selected services.
+     */
     @Override
     public Collection<IService> getServices() {
         System.out.println("Collection<IService> WMTWizardPage.getServices");
         
-        //todo: check which services have been selected, return those
-        URL url = OSMSource.getRelatedServiceUrl(OSMMapnikSource.class);        
-        IService service = serviceExtension.createService(null, serviceExtension.createParams(url));
+        Collection<IService> services = new ArrayList<IService>();
         
+        for (int i = 0; i < tree.getItemCount(); i++) {
+            TreeItem parentItem = tree.getItem(i);
+            
+            /**
+             * only check children if parent is checked
+             * or grayed (which means that not all children are checked)
+             */
+            if (parentItem.getChecked() || parentItem.getGrayed()) {
+                for (int j = 0; j < parentItem.getItemCount(); j++) {
+                    TreeItem childItem = parentItem.getItem(j);
+                    
+                    if (childItem.getChecked() && childItem.getData() != null) {
+                        IService service = (IService) childItem.getData();
+                        System.out.println(service.getTitle());
+                        
+                        services.add(service);
+                    }
+                    
+                }
+                
+            }
+        }
         
-        System.out.println(url.toString());
-        //IService service = CatalogPlugin.getDefault().getLocalCatalog().getById(IService.class, url, new NullProgressMonitor());
-        
-        
-        return Collections.singleton(service);
+        return services;
     }
 
+    /**
+     * Creates a service from a given WMTSource class,
+     * adds this service to a new TreeItem as data object
+     * and sets the name for the TreeItem 
+     *
+     * @param treeItem The parent TreeItem.
+     * @param sourceClass The class for which the service should be created.
+     */
+    private void addWMTSourceToTree(TreeItem treeItem, Class<? extends WMTSource> sourceClass) {
+        TreeItem newTreeItem = new TreeItem(treeItem, SWT.NONE);
+        
+        WMTService service = serviceExtension.createService(sourceClass);
+        
+        newTreeItem.setText(service.getSource().getName());
+        newTreeItem.setData(service);
+    }
+    
     public void createControl( Composite parent ) {
         System.out.println("createControl");
         
+        // only when this is called for the first time
+        if (tree != null) return;
+        
+        // otherwise build control
         Composite composite = new Composite(parent, SWT.NONE);
-        setControl(composite);
+        setControl(composite);        
+        composite.setLayout(new FillLayout());
 
+        //region Create tree component
+        tree = new Tree(composite, SWT.BORDER | SWT.CHECK);
+        tree.addListener(SWT.Selection, new org.eclipse.swt.widgets.Listener(){
+            public void handleEvent( Event event ) {
+                if (event.detail == SWT.CHECK) {
+                    TreeItem item = (TreeItem) event.item;
+                    boolean checked = item.getChecked();
+                    checkItems(item, checked);
+                    checkPath(item.getParentItem(), checked, false);
+                    
+                    // now update the buttons
+                    if (noItemChecked()) {
+                        setPageComplete(false); 
+                    } else {
+                        setPageComplete(true);
+                    }
+                    getWizard().getContainer().updateButtons();
+                }
+            }
+        });
         
-//        setPageComplete(false);
-//        getWizard().getContainer().updateButtons();
-        
-        //Composite composite = new Composite(parent, SWT.NONE);
-        composite.setLayout(new GridLayout(1, false));
+        //region Add OpenStreeMap services
+        TreeItem osm = new TreeItem(tree, SWT.NONE);
+        osm.setText(OSMSource.NAME);
 
-        // Create the tree viewer to display the file tree
-        CheckboxTreeViewer tv = new CheckboxTreeViewer(composite, SWT.NONE);
-        tv.getTree().setLayoutData(new GridData(GridData.FILL_BOTH));
-//        
-//        tv.setContentProvider(new ContentProvider());
-//        tv.setLabelProvider(new LabelProvider());
-        
-        TreeItem osm = new TreeItem(tv.getTree(), SWT.NONE);
-        osm.setText("OpenStreetMap");
+        addWMTSourceToTree(osm, OSMMapnikSource.class);
+        addWMTSourceToTree(osm, OSMOsmarenderSource.class);
+        addWMTSourceToTree(osm, OSMCycleMapSource.class);
+
         osm.setExpanded(true);
+        //endregion
         
+        //todo: add other services
+        
+        // Enable first service for usability reasons
+        osm.getItems()[0].setChecked(true);
+        //endregion
+        
+        //region Add information textbox
+        Text text = new Text (composite,    SWT.WRAP | SWT.MULTI | 
+                                            SWT.BORDER | SWT.H_SCROLL |
+                                            SWT.V_SCROLL | SWT.READ_ONLY);
+        text.setText ("Space for general / copyright information");
+        //endregion
 
-        TreeItem mapnik = new TreeItem(osm, SWT.NONE);
-        mapnik.setText("Mapnik");
 
-        TreeItem osmar = new TreeItem(osm, SWT.NONE);
-        osmar.setText("Osmarender");
-        
-        
-//        new WMTTreeItem(osm, new OSMMapnikSource());
-//        new WMTTreeItem(osm, new OSMOsmarenderSource());
-//        new WMTTreeItem(osm, new OSMCycleMapSource());
-        
-//        tv.setContentProvider(new FileTreeContentProvider());
-//        tv.setLabelProvider(new FileTreeLabelProvider());
-    //   tv.setInput("root"); // pass a non-null that will be ignored
-        
-//      
-//        GridData gridData;
-//      Composite composite = new Composite(parent, SWT.NULL);
-//
-//      GridLayout gridLayout = new GridLayout();
-//      int columns = 1;
-//      gridLayout.numColumns = columns;
-//      composite.setLayout(gridLayout);
-//
-//      gridData = new GridData();
-//
-//      Label urlLabel = new Label(composite, SWT.NONE);
-//      urlLabel.setText(Messages.WMSWizardPage_label_url_text); 
-//      urlLabel.setLayoutData(gridData);
-//
-//      gridData = new GridData(GridData.FILL_HORIZONTAL);
-//      gridData.widthHint = 400;
-//
-//
-//      setControl(composite);
-//      
-////      setPageComplete(false);
-////      getWizard().getContainer().updateButtons();
-//      
-//      Button button = new Button(composite, SWT.NONE);
-//      button.setText("Add service");
-//      
-//      button.addMouseListener(new MouseListener (){
-//          public void mouseDown( MouseEvent e ) {
-//              System.out.println("simulates the selection of a service");
-//              setPageComplete(true);   
-//        
-//        
-////        IRunnableWithProgress runnable = new IRunnableWithProgress(){
-////
-////            public void run( IProgressMonitor monitor ) throws InvocationTargetException,
-////                    InterruptedException {
-////                System.out.println("getWizard().getWorkflow().next()");
-////                getWizard().getWorkflow().next();
-////            }
-////            
-////        };
-////          
-////        
-////        
-////                try {
-////            getContainer().run(true, false, runnable);
-////        } catch (InvocationTargetException e2) {
-////            throw (RuntimeException) new RuntimeException( ).initCause( e2 );
-////        } catch (InterruptedException e2) {
-////            throw (RuntimeException) new RuntimeException( ).initCause( e2 );
-////        }
-//          
-//      }
-//        public void mouseDoubleClick( MouseEvent e ) {}
-//      public void mouseUp( MouseEvent e ) {}      
-//  });
-      }
+        composite.pack();
+
       
+    
+
+      }
+    
+    //region GUI helper methods    
+    /**
+     * Loops the tree and counts checked items
+     * 
+     * @return (selectedItemCount <= 0)
+     */
+    private boolean noItemChecked() {
+        int selectedItemCount = 0;
+        
+        for (int i = 0; i < tree.getItemCount(); i++) {
+            TreeItem parentItem = tree.getItem(i);
+            
+            if (parentItem.getChecked() || parentItem.getGrayed()) {
+                for (int j = 0; j < parentItem.getItemCount(); j++) {
+                    TreeItem childItem = parentItem.getItem(j);
+                    
+                    if (childItem.getChecked()) {
+                        selectedItemCount++;
+                    }                    
+                }                
+            }
+        }           
+            
+        return selectedItemCount <= 0;
+    }
+    
+    //region Check children when parent is checked
+    /**
+     * GUI: helper method for Tree
+     * 
+     * (Un-)checks all children of an item recursive.
+     * 
+     * http://dev.eclipse.org/viewcvs/index.cgi/org.eclipse.swt.snippets/src/org/eclipse/swt/snippets/Snippet274.java?view=co
+     *
+     * @param item
+     * @param checked
+     * @param grayed
+     */
+    private void checkPath(TreeItem item, boolean checked, boolean grayed) {
+        if (item == null) return;
+        if (grayed) {
+            checked = true;
+        } else {
+            int index = 0;
+            TreeItem[] items = item.getItems();
+            while (index < items.length) {
+                TreeItem child = items[index];
+                if (child.getGrayed() || checked != child.getChecked()) {
+                    checked = grayed = true;
+                    break;
+                }
+                index++;
+            }
+        }
+        item.setChecked(checked);
+        item.setGrayed(grayed);
+        checkPath(item.getParentItem(), checked, grayed);
+    }
+
+    /**
+     * GUI: helper method for Tree
+     * 
+     * (Un-)checks all children of an item recursive.
+     * 
+     * http://dev.eclipse.org/viewcvs/index.cgi/org.eclipse.swt.snippets/src/org/eclipse/swt/snippets/Snippet274.java?view=co
+     *
+     * @param item
+     * @param checked
+     */
+    private void checkItems(TreeItem item, boolean checked) {
+        item.setGrayed(false);
+        item.setChecked(checked);
+        TreeItem[] items = item.getItems();
+        for (int i = 0; i < items.length; i++) {
+            checkItems(items[i], checked);
+        }
+    }
+    //endregion
+    //endregion
+    
     @Override
     public void setState( State state ) {
         super.setState(state);

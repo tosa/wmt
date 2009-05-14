@@ -5,7 +5,11 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.refractions.udig.catalog.IService;
 import net.refractions.udig.catalog.ServiceExtension;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMMapnikSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 
 public class WMTServiceExtension implements ServiceExtension {
     
@@ -31,6 +35,22 @@ public class WMTServiceExtension implements ServiceExtension {
         
         return null;
     }
+    
+    /**
+     * Get service from WMTSource-Class
+     * 
+     * Usage:
+     * IService = serviceExtension.createService(OSMMapnikSource.class);
+     * 
+     * @param sourceClass
+     * @return
+     */
+    public WMTService createService(Class<? extends WMTSource> sourceClass) {
+        URL url = OSMSource.getRelatedServiceUrl(sourceClass);        
+        WMTService service = createService(null, createParams(url));
+        
+        return service;        
+    }
 
     /**
      * TODO summary sentence for createParams ...
@@ -50,6 +70,5 @@ public class WMTServiceExtension implements ServiceExtension {
         }
         
         return null;
-    }
-    
+    }    
 }
