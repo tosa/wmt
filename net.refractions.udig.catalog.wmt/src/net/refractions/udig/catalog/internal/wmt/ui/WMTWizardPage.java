@@ -188,8 +188,10 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements Listener, U
         
         //todo: add other services
         
-        // Enable first service for usability reasons
+        // Enable first service for usability reasons 
         osm.getItems()[0].setChecked(true);
+        osm.setChecked(true);
+        osm.setGrayed(true);
         //endregion
         
         //region Add information textbox
