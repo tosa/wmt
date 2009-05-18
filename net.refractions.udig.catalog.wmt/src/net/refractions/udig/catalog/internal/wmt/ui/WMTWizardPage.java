@@ -147,7 +147,7 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements Listener, U
         System.out.println("createControl");
         
         // only when this is called for the first time
-        if (tree != null) return;
+        if (tree != null && !tree.isDisposed()) return;
         
         // otherwise build control
         Composite composite = new Composite(parent, SWT.NONE);
