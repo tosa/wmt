@@ -15,39 +15,21 @@
 package net.refractions.udig.catalog.internal.wmt;
 
 import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 import net.refractions.udig.catalog.IGeoResourceInfo;
-import net.refractions.udig.catalog.ui.CatalogUIPlugin;
-import net.refractions.udig.catalog.ui.ISharedImages;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.geotools.data.ows.CRSEnvelope;
-import org.geotools.data.ows.WMSCapabilities;
-import org.geotools.data.wms.WebMapServer;
-import org.geotools.data.wms.xml.WMSSchema;
-import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
-import com.vividsolutions.jts.geom.Envelope;
-
 class WMTGeoResourceInfo extends IGeoResourceInfo {
-    /** WMSResourceInfo resource field */
+    /** WMTResourceInfo resource field */
     private final WMTGeoResource resource;
-    @SuppressWarnings("unchecked")
     
     WMTGeoResourceInfo(WMTGeoResource resource, IProgressMonitor monitor ) throws IOException {
         this.resource = resource;
         
-        this.title = "WMT";
+        this.title = this.resource.getTitle();
      
           
     }

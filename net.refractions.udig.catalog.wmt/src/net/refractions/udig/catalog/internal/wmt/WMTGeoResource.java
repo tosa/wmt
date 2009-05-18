@@ -32,6 +32,10 @@ public class WMTGeoResource extends IGeoResource {
         return source;
     }
     
+    public String getTitle() {
+        return getSource().getName();
+    }
+    
     /*
      * @see net.refractions.udig.catalog.IResolve#canResolve(java.lang.Class)
      */
