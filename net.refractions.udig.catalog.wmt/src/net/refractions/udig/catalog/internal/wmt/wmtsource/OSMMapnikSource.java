@@ -4,13 +4,13 @@ public class OSMMapnikSource extends OSMSource {
     public static String NAME = "Mapnik"; //$NON-NLS-1$
     
     public OSMMapnikSource() {
-        System.out.println("OSMMapnikSource");
+        System.out.println(NAME);
         setName(NAME); 
     }
 
     @Override
     public String getBaseUrl() {
-        return "mapnik";
+        return "http://tile.openstreetmap.org/"; //$NON-NLS-1$
     }
     
 

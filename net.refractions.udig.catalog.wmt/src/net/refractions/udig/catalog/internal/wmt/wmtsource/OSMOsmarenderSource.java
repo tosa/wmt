@@ -4,7 +4,7 @@ public class OSMOsmarenderSource extends OSMSource {
     public static String NAME = "Osmarender"; //$NON-NLS-1$
     
     public OSMOsmarenderSource() {
-        System.out.println("OSMOsmarenderSource");
+        System.out.println(NAME);
         setName(NAME); 
     }
 

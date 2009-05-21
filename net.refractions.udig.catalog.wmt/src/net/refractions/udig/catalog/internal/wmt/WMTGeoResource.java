@@ -40,7 +40,7 @@ public class WMTGeoResource extends IGeoResource {
      * @see net.refractions.udig.catalog.IResolve#canResolve(java.lang.Class)
      */
     public <T> boolean canResolve( Class<T> adaptee ) {
-        System.out.println("WMTGeoResource.canresolve");
+        //System.out.println("WMTGeoResource.canresolve");
         return adaptee != null
                 && (adaptee.isAssignableFrom(WMTSource.class)
                         || super.canResolve(adaptee));

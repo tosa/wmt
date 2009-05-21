@@ -19,8 +19,10 @@ import java.io.IOException;
 import net.refractions.udig.catalog.IGeoResourceInfo;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+
 
 class WMTGeoResourceInfo extends IGeoResourceInfo {
     /** WMTResourceInfo resource field */
@@ -30,6 +32,8 @@ class WMTGeoResourceInfo extends IGeoResourceInfo {
         this.resource = resource;
         
         this.title = this.resource.getTitle();
+        
+//        this.bounds = new ReferencedEnvelope(-180, 180, -90, 90, DefaultGeographicCRS.WGS84);
      
           
     }
