@@ -28,7 +28,7 @@ public class OSMTile extends Tile {
     }
     
     public OSMTile(OSMTileName tileName, OSMSource osmSource){
-        super(tileName.getTileUrl(osmSource), OSMTile.getExtentFromTileName(tileName));
+        super(tileName.getTileUrl(osmSource), OSMTile.getExtentFromTileName(tileName), tileName.toString());
         
         this.tileName = tileName;
         this.osmSource = osmSource;
@@ -50,6 +50,17 @@ public class OSMTile extends Tile {
         return new OSMTile(tileName.getLowerNeighbour(), osmSource);
     }
     
+    
+    
+    @Override
+    public boolean equals( Object obj ) {
+        if (!(obj instanceof OSMTile)) return false;
+        
+        OSMTile other = (OSMTile) obj;
+        
+        return tileName.equals(other.tileName);
+    }
+
     //region Get tile from coordinate
     /**
      * Finds out the tile which contains the coordinate at a given zoom level.
@@ -64,6 +75,21 @@ public class OSMTile extends Tile {
      * @return
      */
     public static OSMTile getTileFromCoordinate(double lat, double lon, OSMZoomLevel zoomLevel, OSMSource osmSource) {
+        // normalize latitude and longitude
+        lat = normalizeDegreeValue(lat, 90);
+        lon = normalizeDegreeValue(lon, 180);
+        
+        /**
+         * Because the latitude is only valid in 
+         * 85.0511 °N to 85.0511 °S (http://wiki.openstreetmap.org/wiki/Tilenames#X_and_Y),
+         * we have to correct if necessary.
+         */
+        if (lat > 85.0511) {
+            lat = 85.0511;
+        } else if(lat < -85.0511) {
+            lat = -85.0511;            
+        }
+        
         int xTile = (int) Math.floor((lon + 180) / 360 * (1 << zoomLevel.getZoomLevel()));
         int yTile = (int) Math.floor(
                 (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1
@@ -71,8 +97,29 @@ public class OSMTile extends Tile {
                 / Math.PI)
                 / 2 * (1 << zoomLevel.getZoomLevel())
             );
+        System.out.println("getTileFromCoordinate " + zoomLevel.zoomLevel + "/" + xTile +  "/" + 
+                yTile + " lon: " + lon + " lat: " + lat );
         
         return new OSMTile(xTile, yTile, zoomLevel, osmSource);
+    }
+    
+    /**
+     * uDig may produce numbers like -210° for the longitude, but we need
+     * a number in the range -180 to 180, in this case 150.
+     * 
+     * @param value the number to normalize (e.g. -210)
+     * @param maxValue the maximum value (e.g. 180 -> the range is: -180..180)
+     * @return a number between (-maxvalue) and maxvalue
+     */
+    private static double normalizeDegreeValue(double value, int maxValue) {
+        int range = 2 * maxValue;
+        value = (value + maxValue) % range;
+        
+        if (value < 0) {
+            value += range;
+        }
+        
+        return (value-maxValue);
     }
     //endregion
     
@@ -192,6 +239,23 @@ public class OSMTile extends Tile {
             return (a > 0) ? a % b : a % b + b;
         }
         
+        public String toString() {
+            return zoomLevel.zoomLevel + "/" + x + "/" + y; //$NON-NLS-1$ //$NON-NLS-2$
+        }
+        
+        
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof OSMTileName)) return false;
+            
+            OSMTileName other = (OSMTileName) obj;
+            
+            return (x ==other.x) && (y == other.y) && zoomLevel.equals(other.zoomLevel);
+        }
+
+
+
         /**
          * Small helper class which wraps the zoom-level and
          * the maximum tile-number for x and y in this zoom-level. 
@@ -216,7 +280,7 @@ public class OSMTile extends Tile {
                  * 
                  * (zoom-level/x/y): zoom-level/2^(zoom-level)-1/2^(zoom-level)-1)
                  */
-                maxTileNumber = (1 << zoomLevel) - 1; // 2 ^ (zoomLevel) - 1                
+                maxTileNumber = (1 << zoomLevel); // 2 ^ (zoomLevel)                
             }
             
             public int getZoomLevel() {
@@ -226,6 +290,17 @@ public class OSMTile extends Tile {
             public int getMaxTileNumber() {
                 return maxTileNumber;
             }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (!(obj instanceof OSMZoomLevel)) return false;
+                
+                OSMZoomLevel other = (OSMZoomLevel) obj;
+                
+                return zoomLevel == other.zoomLevel;
+            }
+            
+            
         }
         
     }

@@ -17,7 +17,6 @@ Require-Bundle: org.eclipse.ui,
  net.refractions.udig.ui,
  net.refractions.udig.project.ui;visibility:=reexport,
  net.refractions.udig.style;visibility:=reexport,
- net.refractions.udig.style.sld,
- net.refractions.udig.catalog.wms;bundle-version="1.2.0"
+ net.refractions.udig.style.sld
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: J2SE-1.5

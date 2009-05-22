@@ -92,15 +92,19 @@ public abstract class OSMSource extends WMTSource {
      */
     public  List<Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale) {
         OSMZoomLevel zoomLevel = new OSMZoomLevel(getZoomLevelFromMapScale(scale));
-        int maxNumberOfTiles = (zoomLevel.getMaxTileNumber()+1) * (zoomLevel.getMaxTileNumber()+1);
+        int maxNumberOfTiles = zoomLevel.getMaxTileNumber() * zoomLevel.getMaxTileNumber();
                 
         List<Tile> tileList = new ArrayList<Tile>();
         
-        // Let's get the first tile which covers the upper-left corner //todo: is that always correct?
-        OSMTile firstTileOfRow = OSMTile.getTileFromCoordinate(extent.getMaxY(), extent.getMinX(), zoomLevel, this);
-        tileList.add(firstTileOfRow);
+        System.out.println("MinX: " + extent.getMinX() + "MaxX: " + extent.getMaxX());
+        System.out.println("MinY: " + extent.getMinY() + "MaxY: " + extent.getMaxY());
         
-        OSMTile movingTile = firstTileOfRow;
+        // Let's get the first tile which covers the upper-left corner
+        OSMTile firstTile = OSMTile.getTileFromCoordinate(extent.getMaxY(), extent.getMinX(), zoomLevel, this);
+        tileList.add(firstTile);
+        
+        OSMTile firstTileOfRow = null;
+        OSMTile movingTile = firstTileOfRow = firstTile;
         // Loop column
         do {
             // Loop row
@@ -108,9 +112,13 @@ public abstract class OSMSource extends WMTSource {
                 // get the next tile right of this one
                 OSMTile rightNeighbour = movingTile.getRightNeighbour();
                 
-                // Check if the new tile is still part of the extent
-                if (extent.intersects((Envelope) rightNeighbour.getExtent())) {
+                // Check if the new tile is still part of the extent and
+                // that we don't have the first tile again
+                if (extent.intersects((Envelope) rightNeighbour.getExtent())
+                        && !firstTileOfRow.equals(rightNeighbour)) {
                     tileList.add(rightNeighbour);
+                    
+                    System.out.println("adding tile(r) " + rightNeighbour.getId());
                     
                     movingTile = rightNeighbour;
                 } else {
@@ -118,12 +126,15 @@ public abstract class OSMSource extends WMTSource {
                 }
             } while(tileList.size() <= maxNumberOfTiles);
 
-            // get the next tile under this one
+            // get the next tile under the first one of the row
             OSMTile lowerNeighbour = firstTileOfRow.getLowerNeighbour();
             
             // Check if the new tile is still part of the extent
-            if (extent.intersects((Envelope) lowerNeighbour.getExtent())) {
+            if (extent.intersects((Envelope) lowerNeighbour.getExtent())
+                    && !firstTile.equals(lowerNeighbour)) {
                 tileList.add(lowerNeighbour);
+                
+                System.out.println("adding tile(l) " + lowerNeighbour.getId());
                 
                 firstTileOfRow = movingTile = lowerNeighbour;
             } else {

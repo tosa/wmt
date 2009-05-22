@@ -18,6 +18,8 @@ package net.refractions.udig.render.internal.wmt.basic;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -33,6 +35,7 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
 import net.refractions.udig.catalog.IGeoResource;
+//import net.refractions.udig.catalog.internal.wms.WmsPlugin;
 import net.refractions.udig.catalog.internal.wmt.WMTGeoResource;
 import net.refractions.udig.catalog.internal.wmt.tile.Tile;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
@@ -47,10 +50,16 @@ import org.apache.commons.httpclient.HttpConnection;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.swt.graphics.Image;
+import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.GridCoverageFactory;
+import org.geotools.geometry.Envelope2D;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.geotools.renderer.lite.gridcoverage2d.GridCoverageRenderer;
+import org.geotools.styling.RasterSymbolizer;
+import org.geotools.styling.StyleBuilder;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -143,17 +152,6 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             }            
         }
         
-        //region tryz
-        DirectPosition dpUpper = mapExtentProjected.getUpperCorner();  
-        DirectPosition dpLower = mapExtentProjected.getLowerCorner();
-        
-        java.awt.Point p1 = getContext().worldToPixel(new Coordinate(dpUpper.getCoordinate()[0], dpUpper.getCoordinate()[1]));
-        java.awt.Point p2 = getContext().worldToPixel(new Coordinate(dpLower.getCoordinate()[0], dpLower.getCoordinate()[1]));
-        
-        destination.drawLine(p1.x, p1.y, p2.x, p2.y);
-        destination.fillOval(p1.x-50, p1.y+50, 10, 10);
-        //endregion
-        
         // Scale
         double scale = getContext().getViewportModel().getScaleDenominator();
         System.out.println("Scale: " +  scale + " -  zoom-level: " + wmtSource.getZoomLevelFromMapScale(scale));
@@ -161,68 +159,82 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         //Find tiles
         List<Tile> tileList = wmtSource.cutExtentIntoTiles(mapExtentProjected, scale);
         
-        System.out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + 
-"<kml xmlns=\"http://www.opengis.net/kml/2.2\">" + 
-"<Folder>" + 
-"<name>Ground Overlays</name>");
+        // Download and display tiles
+        StyleBuilder styleBuilder = new StyleBuilder();
+        RasterSymbolizer style = styleBuilder.createRasterSymbolizer();
         for(Tile tile : tileList) {
-            System.out.println("<GroundOverlay>" + 
-"            <name></name>" + 
-"            <Icon>" + 
-"                <href>" + tile.getUrl().toString() + "</href>" + 
-"                <viewBoundScale>0,75</viewBoundScale>" + 
-"            </Icon>" + 
-"            <LatLonBox>" + 
-"                <north>" + tile.getExtent().getMaxY() + "</north>" + 
-"                <south>" + tile.getExtent().getMinY() + "</south>" + 
-"                <east>" + tile.getExtent().getMaxX() + "</east>" + 
-"                <west>" + tile.getExtent().getMinX() + "</west>" + 
-"            </LatLonBox>" + 
-"        </GroundOverlay>");
-            
-            
-            /*//stupid try..
-            HttpURLConnection connection = null;
+            // todo: cache
+            tile.download();
+                        
             try {
-                connection = (HttpURLConnection) tile.getUrl().openConnection();
-                
-                System.out.println( "HTTP "+connection.getResponseCode()+":" +tile.getUrl() );                 
-                if( connection.getResponseCode() == 204 ){
-                    connection.disconnect();
-                    return; // we must be "No data for this region.";                            
-                }
-                ImageInputStream imageStream = ImageIO.createImageInputStream(connection.getInputStream());
-                
-                //ImageInputStream imageStream = Accessor.openImageInput( tile.getUrl());
-                
-                ImageReader imagePNG = ImageIO.getImageReadersByFormatName("png").next();
-                imagePNG.setInput( imageStream );
-                
-                BufferedImage image = imagePNG.read(0);
-                                
-                
-                java.awt.Point p = getContext().worldToPixel(new Coordinate(tile.getExtent().getMaxY(), tile.getExtent().getMinX()));
-                            
-                //destination.drawImage(image, null, p.x, p.y);
-                destination.drawImage(image, new AffineTransform(1f, 0f, 0f, 1f, p.x, p.y), null);
-                
-            } catch (IOException e) {
-                // TODO Handle IOException
-                System.out.println("anzeigen klappt nicht");
-            }  
-            */
-            
+                renderTile(destination, tile, style);
+            } catch (Exception e) {
+                System.out.println("renderTile failed");
+            }
         }
-        System.out.println("</Folder></kml>");
     }
+    
+    /**
+     * 
+     * @see net.refractions.udig.render.internal.wmsc.basic#renderTile(Graphics2D graphics, Tile tile, CoordinateReferenceSystem crs, RasterSymbolizer style)
+     * @param graphics
+     * @param tile
+     * @param style
+     * @throws FactoryException
+     * @throws TransformException
+     */
+    private void renderTile(Graphics2D graphics, Tile tile, RasterSymbolizer style) throws FactoryException, TransformException {
+        
+        if (tile == null || tile.getBufferedImage() == null) {
+            return;
+        }
+        
+        // create a gridcoverage from the tile image        
+        GridCoverageFactory factory = new GridCoverageFactory();
+        GridCoverage2D coverage = (GridCoverage2D) factory.create("GridCoverage", tile.getBufferedImage(), tile.getExtent()); //$NON-NLS-1$        
+        Envelope2D coveragebounds = coverage.getEnvelope2D();
 
-   
+        // bounds of tile
+        Envelope bnds = new Envelope(coveragebounds.getMinX(), coveragebounds.getMaxX(), coveragebounds.getMinY(),
+                coveragebounds.getMaxY());
+
+        //convert bounds to necessary viewport projection
+        if (!coverage.getCoordinateReferenceSystem().equals(getContext().getCRS())){
+            MathTransform transform = CRS.findMathTransform(coverage.getCoordinateReferenceSystem(), getContext().getCRS());
+            bnds = JTS.transform(bnds, transform);
+        }
+        
+        //determine screen coordinates of tiles
+        Point upperLeft = getContext().worldToPixel(new Coordinate(bnds.getMinX(), bnds.getMinY()));
+        Point bottomRight = getContext().worldToPixel(new Coordinate(bnds.getMaxX(), bnds.getMaxY()));
+        Rectangle tileSize = new Rectangle(upperLeft);
+        tileSize.add(bottomRight);
+
+        //render
+        try{
+            GridCoverageRenderer paint = new GridCoverageRenderer(getContext().getCRS(), bnds, tileSize);
+           
+            paint.paint(graphics, coverage, style);
+           
+            boolean TESTING = true;
+            if( TESTING ){
+                /* for testing draw border around tiles */
+                graphics.setColor(Color.BLACK);
+                graphics.drawLine((int)tileSize.getMinX(), (int)tileSize.getMinY(), (int)tileSize.getMinX(), (int)tileSize.getMaxY());
+                graphics.drawLine((int)tileSize.getMinX(), (int)tileSize.getMinY(), (int)tileSize.getMaxX(), (int)tileSize.getMinY());
+                graphics.drawLine((int)tileSize.getMaxX(), (int)tileSize.getMinY(), (int)tileSize.getMaxX(), (int)tileSize.getMaxY());
+                graphics.drawLine((int)tileSize.getMinX(), (int)tileSize.getMaxY(), (int)tileSize.getMaxX(), (int)tileSize.getMaxY());
+                graphics.drawString(tile.getId(), ((int)tileSize.getMaxX()-113), 
+                        ((int)tileSize.getMaxY()-113));
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+            System.out.println("Error Rendering tile. Painting Tile:" + (coverage != null ? coverage.getName() : "")); //$NON-NLS-1$ //$NON-NLS-2$
+        }
+    }
 
     
     public void refreshImage() throws RenderException {
         System.out.println("refreshImage");
     }
-
-    
-
 }

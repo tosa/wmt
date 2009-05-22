@@ -20,6 +20,14 @@ public class OSMTileTest extends TestCase{
         assertEquals("http://tile.openstreetmap.org/6/33/21.png", tile.getUrl().toString()); //$NON-NLS-1$
     }
     
+    public void testGetTileFromCoordinateLatitude() {
+        OSMSource osmSource = new OSMMapnikSource();
+        
+        OSMTile tile = OSMTile.getTileFromCoordinate(85.33499182341461, -103.68507972493057, new OSMZoomLevel(0), osmSource);
+        
+        assertEquals("http://tile.openstreetmap.org/0/0/0.png", tile.getUrl().toString()); //$NON-NLS-1$
+    }
+    
     public void testGetExtentFromTileName() {
         OSMTileName tileName = new OSMTileName(33, 21, new OSMZoomLevel(6));
         
@@ -34,5 +42,33 @@ public class OSMTileTest extends TestCase{
         System.out.println("Max-X: " + extent.getMaxX()); //$NON-NLS-1$
         System.out.println("Min-Y: " + extent.getMinY()); //$NON-NLS-1$
         System.out.println("Max-Y: " + extent.getMaxY()); //$NON-NLS-1$        
+    }
+    
+    public void testNeighbourCalculation() {
+        OSMZoomLevel zoomLevel = new OSMZoomLevel(1);        
+        OSMTileName tileName = new OSMTileName(1, 0, zoomLevel);
+        
+        assertEquals(new OSMTileName(0, 0, zoomLevel), tileName.getRightNeighbour());  
+        assertEquals(new OSMTileName(1, 1, zoomLevel), tileName.getUpperNeighbour());     
+    }
+    
+    public void testNeighbourCalculation2() {
+        OSMZoomLevel zoomLevel = new OSMZoomLevel(2);        
+        OSMTileName tileName = new OSMTileName(2, 2, zoomLevel);
+        
+        assertEquals(new OSMTileName(3, 2, zoomLevel), tileName.getRightNeighbour());     
+    }
+    
+    public void testGetExtentFromTileName2() {
+        // actually not a test, just printing out the extent of the whole map
+        OSMTileName tileName = new OSMTileName(0, 0, new OSMZoomLevel(0));
+        ReferencedEnvelope extent = OSMTile.getExtentFromTileName(tileName);
+        
+        System.out.println("Min-X: " + extent.getMinX()); //$NON-NLS-1$
+        System.out.println("Max-X: " + extent.getMaxX()); //$NON-NLS-1$
+        System.out.println("Min-Y: " + extent.getMinY()); //$NON-NLS-1$
+        System.out.println("Max-Y: " + extent.getMaxY()); //$NON-NLS-1$        
+        
+        assertEquals(true, true);
     }
 }

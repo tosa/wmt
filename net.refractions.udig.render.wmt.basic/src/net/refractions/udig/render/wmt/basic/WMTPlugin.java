@@ -43,7 +43,7 @@ public class WMTPlugin extends AbstractUIPlugin {
      */
     public WMTPlugin() {
         super();
-        System.out.println("WMTPlugin");
+        System.out.println("WMTPlugin (Renderer)");
         plugin=this;
     }
 

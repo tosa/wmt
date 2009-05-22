@@ -26,6 +26,7 @@ public class WMTPlugin extends AbstractUIPlugin {
 	public WMTPlugin() {
 		super();
 		plugin = this;
+		System.out.println("WMTPlugin (Catalog)");
 	}
 
 	/**
