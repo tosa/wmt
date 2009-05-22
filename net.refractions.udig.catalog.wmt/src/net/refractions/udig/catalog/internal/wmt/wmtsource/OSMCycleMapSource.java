@@ -10,7 +10,7 @@ public class OSMCycleMapSource extends OSMSource {
 
     @Override
     public String getBaseUrl() {
-        return null;
+        return "http://andy.sandbox.cloudmade.com/tiles/cycle/"; //$NON-NLS-1$
     }
 
 }

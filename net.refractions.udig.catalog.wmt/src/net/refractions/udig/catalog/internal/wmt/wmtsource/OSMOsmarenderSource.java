@@ -10,7 +10,7 @@ public class OSMOsmarenderSource extends OSMSource {
 
     @Override
     public String getBaseUrl() {
-        return null;
+        return "http://tah.openstreetmap.org/Tiles/tile/"; //$NON-NLS-1$
     }
 
 }
