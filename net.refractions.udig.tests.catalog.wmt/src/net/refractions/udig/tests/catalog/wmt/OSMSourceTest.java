@@ -1,6 +1,7 @@
 package net.refractions.udig.tests.catalog.wmt;
 
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMMapnikSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMOsmarenderSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
 import junit.framework.TestCase;
 
@@ -16,7 +17,12 @@ public class OSMSourceTest extends TestCase{
         
         assertEquals(3, source.getZoomLevelFromMapScale(30000000));
 
-        assertEquals(2, source.getZoomLevelFromMapScale(130000000));        
+        assertEquals(2, source.getZoomLevelFromMapScale(130000000));   
+        
+        // Osmarender Tests
+        OSMSource sourceOsmarender = new OSMOsmarenderSource();
+        assertEquals(17, sourceOsmarender.getZoomLevelFromMapScale(1000));
+        assertEquals(2, sourceOsmarender.getZoomLevelFromMapScale(130000000));  
     }
     
     

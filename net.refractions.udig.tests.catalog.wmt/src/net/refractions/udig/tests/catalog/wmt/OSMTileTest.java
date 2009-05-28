@@ -67,7 +67,7 @@ public class OSMTileTest extends TestCase{
         System.out.println("Min-X: " + extent.getMinX()); //$NON-NLS-1$
         System.out.println("Max-X: " + extent.getMaxX()); //$NON-NLS-1$
         System.out.println("Min-Y: " + extent.getMinY()); //$NON-NLS-1$
-        System.out.println("Max-Y: " + extent.getMaxY()); //$NON-NLS-1$        
+        System.out.println("Max-Y: " + extent.getMaxY()); //$NON-NLS-1$     
         
         assertEquals(true, true);
     }

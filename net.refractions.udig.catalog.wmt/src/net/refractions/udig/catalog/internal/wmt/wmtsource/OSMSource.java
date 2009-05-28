@@ -48,7 +48,7 @@ public abstract class OSMSource extends WMTSource {
      * 2   1 : 111 million     39135.758482  
      * </pre>
      */
-    private static double[] scaleList = {
+    public static double[] scaleList = {
         Double.NaN,
         Double.NaN,
         111000000,

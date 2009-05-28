@@ -105,7 +105,7 @@ public class OSMTile extends Tile {
     
     /**
      * uDig may produce numbers like -210° for the longitude, but we need
-     * a number in the range -180 to 180, in this case 150.
+     * a number in the range -180 to 180, so instead of -210 we want 150.
      * 
      * @param value the number to normalize (e.g. -210)
      * @param maxValue the maximum value (e.g. 180 -> the range is: -180..180)
