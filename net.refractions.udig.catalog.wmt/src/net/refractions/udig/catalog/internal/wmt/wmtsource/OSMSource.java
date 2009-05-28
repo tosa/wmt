@@ -92,7 +92,7 @@ public abstract class OSMSource extends WMTSource {
      */
     public  List<Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale) {
         OSMZoomLevel zoomLevel = new OSMZoomLevel(getZoomLevelFromMapScale(scale));
-        int maxNumberOfTiles = zoomLevel.getMaxTileNumber() * zoomLevel.getMaxTileNumber();
+        long maxNumberOfTiles = ((long) zoomLevel.getMaxTileNumber()) * ((long) zoomLevel.getMaxTileNumber());
                 
         List<Tile> tileList = new ArrayList<Tile>();
         
