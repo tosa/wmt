@@ -2,12 +2,17 @@ package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.util.ObjectCache;
+import org.geotools.util.ObjectCaches;
 
 import net.refractions.udig.catalog.internal.wmt.WMTService;
-import net.refractions.udig.catalog.internal.wmt.tile.Tile;
+import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
+import net.refractions.udig.catalog.wmsc.server.Tile;
 import net.refractions.udig.core.internal.CorePlugin;
 
 /**
@@ -17,6 +22,14 @@ import net.refractions.udig.core.internal.CorePlugin;
  */
 public abstract class WMTSource {
     private String name;
+    
+    /** 
+     * This WeakHashMap acts as a memory cache.
+     * Because we are using SoftReference, we won't run
+     * out of Memory, the GC will free space.
+     **/
+    private ObjectCache tiles = ObjectCaches.create("soft", 50); //$NON-NLS-1$
+    private List<String> tempTileList = new ArrayList<String>();
     
     public WMTSource() {
     }
@@ -28,6 +41,43 @@ public abstract class WMTSource {
     public String getName() {
         return name;
     }
+    
+    public int getTileWidth() {
+        return 256;
+    }
+    
+    public int getTileHeight() {
+        return 256;
+    }
+    
+    //region Methods to access the tile-list
+    public boolean listContainsTile(String tileId) {
+        System.out.println("ListContainsTile: " + (tiles.peek(tileId) == null) + " - " + (tiles.get(tileId) == null));
+        return !(tiles.peek(tileId) == null || tiles.get(tileId) == null);
+    }
+    
+    public WMTTile addTileToList(WMTTile tile) {
+        System.out.println(" --------------------------- " + 
+                tempTileList.contains(tile.getId()) + " - " + listContainsTile(tile.getId())
+                + " --- " + tiles.getKeys().size());
+        
+        if(!tempTileList.contains(tile.getId()))
+            tempTileList.add(tile.getId());
+        
+        if (listContainsTile(tile.getId())){
+            System.out.println(tile.getId() + " already in Cache");
+            return getTileFromList(tile.getId());
+        } else {
+            System.out.println(tile.getId() + " was not in Cache");
+            tiles.put(tile.getId(), tile);
+            return tile;            
+        }
+    }
+    
+    public WMTTile getTileFromList(String tileId) {
+        return (WMTTile) tiles.get(tileId);
+    }
+    //endregion
     
     /**
      * Returns the catalog url for a given class.
@@ -85,9 +135,19 @@ public abstract class WMTSource {
             
             if (scale > scaleList[i+1]) {
                 zoomLevel = i;
-            }
-            
+            }            
         }
+        
+//        for (int i = scaleList.length-2; i >= 0; i--) {
+//            if (Double.isNaN(scaleList[i])) break;
+//            if (scale < scaleList[i]) break;
+//            
+//            zoomLevel = i;
+////            if (scale > scaleList[i+1]) {
+////                zoomLevel = i;
+////            }
+//            
+//        }
         
         return zoomLevel;
     }
@@ -101,7 +161,7 @@ public abstract class WMTSource {
      * @param scale The map scale.
      * @return The list of found tiles.
      */
-    public abstract List<Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale);
+    public abstract Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale);
     //endregion
     
     @Override

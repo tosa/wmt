@@ -8,6 +8,7 @@ import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName.OSMZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.core.internal.CorePlugin;
 
 /**
@@ -19,16 +20,16 @@ import net.refractions.udig.core.internal.CorePlugin;
  * @author to.srwn
  * @since 1.1.0
  */
-public class OSMTile extends Tile {
+public class OSMTile extends WMTTile {
     private OSMTileName tileName;
     private OSMSource osmSource;
     
     public OSMTile(int x, int y, OSMZoomLevel zoomLevel, OSMSource osmSource) {
-        this(new OSMTileName(x, y, zoomLevel), osmSource);
+        this(new OSMTileName(x, y, zoomLevel, osmSource), osmSource);
     }
     
     public OSMTile(OSMTileName tileName, OSMSource osmSource){
-        super(tileName.getTileUrl(osmSource), OSMTile.getExtentFromTileName(tileName), tileName.toString());
+        super(OSMTile.getExtentFromTileName(tileName), tileName);
         
         this.tileName = tileName;
         this.osmSource = osmSource;
@@ -160,15 +161,18 @@ public class OSMTile extends Tile {
      * @author to.srwn
      * @since 1.1.0
      */
-    public static class OSMTileName {
+    public static class OSMTileName extends WMTTileName{
         private OSMZoomLevel zoomLevel;
         private int x;
         private int y;
+        private OSMSource osmSource;
                 
-        public OSMTileName(int x, int y, OSMZoomLevel zoomLevel) {
+        public OSMTileName(int x, int y, OSMZoomLevel zoomLevel, OSMSource source) {
+            super(zoomLevel.zoomLevel, x, y, source);
             this.zoomLevel = zoomLevel;
             this.x = x;
             this.y = y;
+            this.osmSource = source;
         }
         
         /**
@@ -181,7 +185,7 @@ public class OSMTile extends Tile {
          * @param osmSource
          * @return
          */
-        public URL getTileUrl(OSMSource osmSource) {
+        public URL getTileUrl() {
             try {
                 return new URL(null,
                         osmSource.getBaseUrl() + 
@@ -200,28 +204,32 @@ public class OSMTile extends Tile {
             return new OSMTileName( 
                         OSMTileName.arithmeticMod((x-1), zoomLevel.getMaxTileNumber()),
                         y,
-                        zoomLevel);
+                        zoomLevel,
+                        osmSource);
         }
         
         public OSMTileName getRightNeighbour() {
             return new OSMTileName( 
                         OSMTileName.arithmeticMod((x+1), zoomLevel.getMaxTileNumber()),
                         y,
-                        zoomLevel);
+                        zoomLevel,
+                        osmSource);
         }
         
         public OSMTileName getUpperNeighbour() {
             return new OSMTileName( 
                         x,
                         OSMTileName.arithmeticMod((y-1), zoomLevel.getMaxTileNumber()),
-                        zoomLevel);
+                        zoomLevel,
+                        osmSource);
         }
         
         public OSMTileName getLowerNeighbour() {
             return new OSMTileName( 
                         x,
                         OSMTileName.arithmeticMod((y+1), zoomLevel.getMaxTileNumber()),
-                        zoomLevel);
+                        zoomLevel,
+                        osmSource);
         }
         
         /**
@@ -242,8 +250,6 @@ public class OSMTile extends Tile {
         public String toString() {
             return zoomLevel.zoomLevel + "/" + x + "/" + y; //$NON-NLS-1$ //$NON-NLS-2$
         }
-        
-        
         
         @Override
         public boolean equals(Object obj) {

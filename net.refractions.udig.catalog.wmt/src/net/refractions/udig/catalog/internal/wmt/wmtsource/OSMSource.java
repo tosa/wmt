@@ -1,11 +1,11 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile;
-import net.refractions.udig.catalog.internal.wmt.tile.Tile;
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName.OSMZoomLevel;
+import net.refractions.udig.catalog.wmsc.server.Tile;
 
 import org.geotools.geometry.jts.ReferencedEnvelope;
 
@@ -82,6 +82,8 @@ public abstract class OSMSource extends WMTSource {
     //endregion
 
     //region Tiles-Cutting
+    
+    //todo: check if tile is rendered from OSM before adding to list (otherwise take the next zoom level!)
     /**
      * OSM implementation of cutting the tiles.
      * 
@@ -90,18 +92,18 @@ public abstract class OSMSource extends WMTSource {
      * @param scale The map scale.
      * @return The list of found tiles.
      */
-    public  List<Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale) {
+    public Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale) {
         OSMZoomLevel zoomLevel = new OSMZoomLevel(getZoomLevelFromMapScale(scale));
         long maxNumberOfTiles = ((long) zoomLevel.getMaxTileNumber()) * ((long) zoomLevel.getMaxTileNumber());
                 
-        List<Tile> tileList = new ArrayList<Tile>();
+        Map<String, Tile> tileList = new HashMap<String, Tile>();
         
         System.out.println("MinX: " + extent.getMinX() + "MaxX: " + extent.getMaxX());
         System.out.println("MinY: " + extent.getMinY() + "MaxY: " + extent.getMaxY());
         
         // Let's get the first tile which covers the upper-left corner
         OSMTile firstTile = OSMTile.getTileFromCoordinate(extent.getMaxY(), extent.getMinX(), zoomLevel, this);
-        tileList.add(firstTile);
+        tileList.put(firstTile.getId(), addTileToList(firstTile));
         
         OSMTile firstTileOfRow = null;
         OSMTile movingTile = firstTileOfRow = firstTile;
@@ -116,7 +118,7 @@ public abstract class OSMSource extends WMTSource {
                 // that we don't have the first tile again
                 if (extent.intersects((Envelope) rightNeighbour.getExtent())
                         && !firstTileOfRow.equals(rightNeighbour)) {
-                    tileList.add(rightNeighbour);
+                    tileList.put(rightNeighbour.getId(), addTileToList(rightNeighbour));
                     
                     System.out.println("adding tile(r) " + rightNeighbour.getId());
                     
@@ -132,7 +134,7 @@ public abstract class OSMSource extends WMTSource {
             // Check if the new tile is still part of the extent
             if (extent.intersects((Envelope) lowerNeighbour.getExtent())
                     && !firstTile.equals(lowerNeighbour)) {
-                tileList.add(lowerNeighbour);
+                tileList.put(lowerNeighbour.getId(), addTileToList(lowerNeighbour));
                 
                 System.out.println("adding tile(l) " + lowerNeighbour.getId());
                 

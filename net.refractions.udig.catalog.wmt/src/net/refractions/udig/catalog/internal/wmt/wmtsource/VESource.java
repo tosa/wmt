@@ -1,8 +1,8 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
-import java.util.List;
+import java.util.Map;
 
-import net.refractions.udig.catalog.internal.wmt.tile.Tile;
+import net.refractions.udig.catalog.wmsc.server.Tile;
 
 import org.geotools.geometry.jts.ReferencedEnvelope;
 
@@ -26,7 +26,7 @@ public class VESource extends WMTSource {
     }
 
     @Override
-    public List<Tile> cutExtentIntoTiles( ReferencedEnvelope extent, double scale ) {
+    public Map<String, Tile> cutExtentIntoTiles( ReferencedEnvelope extent, double scale ) {
         throw new NotImplementedException();
     }
 

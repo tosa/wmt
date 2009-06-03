@@ -12,10 +12,11 @@ public class OSMSourceTest extends TestCase{
         
         assertEquals(18, source.getZoomLevelFromMapScale(0));
         assertEquals(18, source.getZoomLevelFromMapScale(1600));
+        assertEquals(18, source.getZoomLevelFromMapScale(3380));
         
-        assertEquals(17, source.getZoomLevelFromMapScale(2000));
+        assertEquals(17, source.getZoomLevelFromMapScale(6700));
         
-        assertEquals(3, source.getZoomLevelFromMapScale(30000000));
+        assertEquals(4, source.getZoomLevelFromMapScale(30000000));
 
         assertEquals(2, source.getZoomLevelFromMapScale(130000000));   
         
