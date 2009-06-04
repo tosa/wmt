@@ -90,10 +90,11 @@ public abstract class OSMSource extends WMTSource {
      * @see WMTSource.cutExtentIntoTiles(ReferencedEnvelope extent, double scale)
      * @param extent The extent which should be cut.
      * @param scale The map scale.
+     * @param scaleFactor The scale-factor (0-100): scale up or down?
      * @return The list of found tiles.
      */
-    public Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale) {
-        OSMZoomLevel zoomLevel = new OSMZoomLevel(getZoomLevelFromMapScale(scale));
+    public Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale, int scaleFactor) {
+        OSMZoomLevel zoomLevel = new OSMZoomLevel(getZoomLevelFromMapScale(scale, scaleFactor));
         long maxNumberOfTiles = ((long) zoomLevel.getMaxTileNumber()) * ((long) zoomLevel.getMaxTileNumber());
                 
         Map<String, Tile> tileList = new HashMap<String, Tile>();

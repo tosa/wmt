@@ -91,11 +91,14 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 
 /**
- * The basic renderer for a WMS Layer
+ * The basic renderer for a WMT Layer
  * <p>
  * </p>
  */
 public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRenderer {
+    // todo: move into properties
+    public int SCALE_FACTOR = 50;
+    
     private static StyleBuilder styleBuilder = new StyleBuilder();
 
     private TileListenerImpl listener = new TileListenerImpl();
@@ -117,7 +120,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
     private BlockingQueue<Tile> tilesToDraw_queue = new PriorityBlockingQueue<Tile>();
     
     /**
-     * Construct a new BasicWMSRenderer
+     * Construct a new BasicWMTRenderer
      */
     public BasicWMTRenderer() {
         System.out.println("BasicWMTRenderer is called!");
@@ -142,7 +145,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         if (monitor == null){
             monitor = new NullProgressMonitor();
         }
-        monitor.beginTask("Render WMSC", 100); //$NON-NLS-1$
+        monitor.beginTask("Render WMT", 100); //$NON-NLS-1$
         setState(STARTING);
                 
         ILayer layer = getContext().getLayer();
@@ -204,10 +207,10 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         
         // Scale
         double scale = getContext().getViewportModel().getScaleDenominator();
-        System.out.println("Scale: " +  scale + " -  zoom-level: " + wmtSource.getZoomLevelFromMapScale(scale));
+        System.out.println("Scale: " +  scale + " -  zoom-level: " + wmtSource.getZoomLevelFromMapScale(scale, SCALE_FACTOR));
         
         //Find tiles
-        Map<String, Tile> tileList = wmtSource.cutExtentIntoTiles(mapExtentProjected, scale);
+        Map<String, Tile> tileList = wmtSource.cutExtentIntoTiles(mapExtentProjected, scale, SCALE_FACTOR);
         
         // Download and display tiles
         
@@ -216,7 +219,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         TileRange range = null;
         
         TileSet tileset = new WMTTileSetWrapper(wmtSource);
-        com.vividsolutions.jts.geom.Envelope bnds = new com.vividsolutions.jts.geom.Envelope(mapExtentProjected.getMinX(), mapExtentProjected.getMaxX(), mapExtentProjected.getMinY(), mapExtentProjected.getMaxY());
+        com.vividsolutions.jts.geom.Envelope bnds = mapExtentProjected;//new com.vividsolutions.jts.geom.Envelope(mapExtentProjected.getMinX(), mapExtentProjected.getMaxX(), mapExtentProjected.getMinY(), mapExtentProjected.getMaxY());
                 
         String value = CatalogPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.P_WMSCTILE_CACHING);
         if (value.equals(WMSCTileCaching.ONDISK.toString())) {
@@ -362,7 +365,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         }
         
     }catch (Exception ex){
-        WmsPlugin.log("Error rendering wmsc.", ex); //$NON-NLS-1$
+        WMTPlugin.log("Error rendering WMT.", ex); //$NON-NLS-1$
     }
     
     monitor.done();

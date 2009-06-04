@@ -16,5 +16,5 @@ package net.refractions.udig.render.internal.wmt.basic;
 public interface Trace {
     /** You may set this to "true" in your .options file */
     public static final String RENDER =
-        "net.refractions.udig.render.wms.basic/debug/render/trace"; //$NON-NLS-1$    
+        "net.refractions.udig.render.wmt.basic/debug/render/trace"; //$NON-NLS-1$    
 }

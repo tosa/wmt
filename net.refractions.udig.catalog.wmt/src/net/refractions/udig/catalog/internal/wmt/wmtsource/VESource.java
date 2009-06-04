@@ -26,7 +26,7 @@ public class VESource extends WMTSource {
     }
 
     @Override
-    public Map<String, Tile> cutExtentIntoTiles( ReferencedEnvelope extent, double scale ) {
+    public Map<String, Tile> cutExtentIntoTiles( ReferencedEnvelope extent, double scale, int scaleFactor) {
         throw new NotImplementedException();
     }
 

@@ -120,10 +120,14 @@ public abstract class WMTSource {
     /**
      * Translates the map scale into a zoom-level for the map services.
      *
+     * The scale-factor (0-100) decides whether the tiles will be
+     * scaled down (100) or scaled up (0).
+     *
      * @param scale The current map scale.
+     * @param scaleFactor Scale-factor (0-100)
      * @return Zoom-level
      */
-    public int getZoomLevelFromMapScale(double scale) {
+    public int getZoomLevelFromMapScale(double scale, int scaleFactor) {
         double[] scaleList = getScaleList();
         
         assert(scaleList != null && scaleList.length > 0);
@@ -132,12 +136,42 @@ public abstract class WMTSource {
         int zoomLevel = scaleList.length - 1;
         for (int i = scaleList.length-2; i >= 0; i--) {
             if (Double.isNaN(scaleList[i])) break;
+            if (scale < scaleList[i]) break;
             
+            zoomLevel = i;
             if (scale > scaleList[i+1]) {
                 zoomLevel = i;
-            }            
+            }
         }
         
+       // return zoomLevel;
+        // Now apply the scale-factor
+        if (zoomLevel == 0) {
+            return zoomLevel;
+        } else {
+            int upperScaleIndex = zoomLevel - 1;
+            int lowerScaleIndex = zoomLevel;
+            
+            double deltaScale = scaleList[upperScaleIndex] - scaleList[lowerScaleIndex];
+            double rangeScale = (scaleFactor / 100d) * deltaScale;
+            double limitScale = scaleList[lowerScaleIndex] + rangeScale;
+            if (scale > limitScale) {
+                return upperScaleIndex;
+            } else {
+                return lowerScaleIndex;
+            }
+        }
+        
+        // Scale-Up
+//        for (int i = scaleList.length-2; i >= 0; i--) {
+//            if (Double.isNaN(scaleList[i])) break;
+//            
+//            if (scale > scaleList[i+1]) {
+//                zoomLevel = i;
+//            }            
+//        }
+        
+        // Scale-Down
 //        for (int i = scaleList.length-2; i >= 0; i--) {
 //            if (Double.isNaN(scaleList[i])) break;
 //            if (scale < scaleList[i]) break;
@@ -149,7 +183,7 @@ public abstract class WMTSource {
 //            
 //        }
         
-        return zoomLevel;
+        //return zoomLevel;
     }
     //endregion
     
@@ -159,9 +193,10 @@ public abstract class WMTSource {
      * 
      * @param extent The extent which should be cut.
      * @param scale The map scale.
+     * @param scaleFactor The scale-factor (0-100): scale up or down?
      * @return The list of found tiles.
      */
-    public abstract Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale);
+    public abstract Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale, int scaleFactor);
     //endregion
     
     @Override
