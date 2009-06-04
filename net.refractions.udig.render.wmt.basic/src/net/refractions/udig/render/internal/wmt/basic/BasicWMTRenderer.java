@@ -20,41 +20,24 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
-import java.awt.image.AffineTransformOp;
-import java.awt.image.BufferedImage;
-import java.awt.image.BufferedImageOp;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
-
 import net.refractions.udig.catalog.CatalogPlugin;
 import net.refractions.udig.catalog.IGeoResource;
-//import net.refractions.udig.catalog.internal.wms.WmsPlugin;
 import net.refractions.udig.catalog.internal.PreferenceConstants;
 import net.refractions.udig.catalog.internal.wms.WmsPlugin;
-import net.refractions.udig.catalog.internal.wmt.WMTGeoResource;
 import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTileSetWrapper;
-import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.catalog.wmsc.server.Tile;
 import net.refractions.udig.catalog.wmsc.server.TileListener;
 import net.refractions.udig.catalog.wmsc.server.TileRange;
 import net.refractions.udig.catalog.wmsc.server.TileRangeInMemory;
-import net.refractions.udig.catalog.wmsc.server.TileRangeOnDisk;
 import net.refractions.udig.catalog.wmsc.server.TileSet;
 import net.refractions.udig.catalog.wmsc.server.TileWorkerQueue;
 import net.refractions.udig.catalog.wmsc.server.WMSTile;
@@ -63,25 +46,18 @@ import net.refractions.udig.project.internal.render.impl.RendererImpl;
 import net.refractions.udig.project.render.IMultiLayerRenderer;
 import net.refractions.udig.project.render.RenderException;
 import net.refractions.udig.render.internal.wmsc.basic.WMSCTileCaching;
-import net.refractions.udig.render.wms.basic.WMSPlugin;
-import net.refractions.udig.render.wmt.basic.internal.Messages;
 
-import org.apache.commons.httpclient.HttpConnection;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.SubProgressMonitor;
-import org.eclipse.swt.graphics.Image;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.geometry.Envelope2D;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.renderer.lite.gridcoverage2d.GridCoverageRenderer;
 import org.geotools.styling.RasterSymbolizer;
 import org.geotools.styling.StyleBuilder;
-import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
@@ -183,7 +159,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         
         // Get map and layer CRS
         CoordinateReferenceSystem mapCRS = mapExtent.getCoordinateReferenceSystem();
-        CoordinateReferenceSystem layerCRS = layer.getCRS(); // should be WGS_84 // can the user change the layer CRS?
+        CoordinateReferenceSystem layerCRS = layer.getCRS(); // should be WGS_84 // can the user change the layer CRS? he can
         
                 
         ReferencedEnvelope mapExtentProjected;
@@ -197,7 +173,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         } else {         
             // Reproject map extent
             try {                
-                mapExtentProjected = mapExtent.transform(layerCRS, true); // or use JTS.transform?? sehe BasicWMSCRenderer
+                mapExtentProjected = mapExtent.transform(layerCRS, true); // or use JTS.transform?? see BasicWMSCRenderer
             } catch (Exception e) {
                 // map extent can not be reprojected, cancel rendering
                 throw new RenderException("reprojecting error");
@@ -343,7 +319,10 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                 if (tile != null && tile.getBufferedImage() != null &&
                         viewbounds != null && 
                         mapExtentProjected.intersects(tile.getBounds()) &&
-                        //viewbounds.intersects(tile.getBounds()) &&
+                        // todo: the following is from WMSCRenderer:
+                        // it assumes that the map and the tile have the same CRS
+                        // is that always true? (possible bug?)
+                        //viewbounds.intersects(tile.getBounds()) && 
                         !renderedTiles.contains(tile.getId())) {
 
                     renderTile(destination, (WMTTile) tile, style);
@@ -412,6 +391,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
 
         //convert bounds to necessary viewport projection
         if (!coverage.getCoordinateReferenceSystem().equals(getContext().getCRS())){
+            // todo: how long does is take to find the transformation method? better do it once at the beginning
             MathTransform transform = CRS.findMathTransform(coverage.getCoordinateReferenceSystem(), getContext().getCRS());
             bnds = JTS.transform(bnds, transform);
         }
