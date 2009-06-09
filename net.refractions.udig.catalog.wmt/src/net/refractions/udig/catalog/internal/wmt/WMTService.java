@@ -34,6 +34,8 @@ import net.refractions.udig.catalog.wmt.internal.Messages;
  */
 public class WMTService extends IService {
     public static String ID = "wmt://localhost/wmt/"; //$NON-NLS-1$
+    public static String KEY_PROPERTY_ZOOM_LEVEL_SELECTION_AUTOMATIC = "PROPERTY_ZOOM_LEVEL_SELECTION_AUTOMATIC"; //$NON-NLS-1$
+    public static String KEY_PROPERTY_ZOOM_LEVEL_VALUE = "PROPERTY_ZOOM_LEVEL_VALUE"; //$NON-NLS-1$
         
     /** Dummy url for a WMT
      * (static block because URL constructor can throw exception 
@@ -85,6 +87,7 @@ public class WMTService extends IService {
                          */
                         String className = url.toString().replace(ID, ""); //$NON-NLS-1$
                         source = (WMTSource) Class.forName(className).newInstance();
+                        source.setWmtService(this);
                     } catch(Throwable t) {
                         msg = t;
                         source = null;

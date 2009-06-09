@@ -163,6 +163,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         
                 
         ReferencedEnvelope mapExtentProjected;
+        MathTransform transformLayerToMap = null;
         /*
          * Compare CoordinateReferenceSystem:
          * http://docs.codehaus.org/display/GEOTDOC/05+Use+of+Equals+with+CoordinateReferenceSystem+and+Datum    
@@ -172,8 +173,15 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             mapExtentProjected = mapExtent;
         } else {         
             // Reproject map extent
-            try {                
-                mapExtentProjected = mapExtent.transform(layerCRS, true); // or use JTS.transform?? see BasicWMSCRenderer
+            try {   
+                // Let's find a transformation to reproject the map extent
+                MathTransform transformMapToLayer = CRS.findMathTransform(mapCRS, layerCRS);
+                // .. and also one for back-projecting the tile extents 
+                transformLayerToMap = CRS.findMathTransform(layerCRS, mapCRS);
+                
+                mapExtentProjected = new ReferencedEnvelope(JTS.transform(mapExtent, transformMapToLayer), layerCRS);
+                
+                //mapExtentProjected = mapExtent.transform(layerCRS, true); // or use JTS.transform?? see BasicWMSCRenderer
             } catch (Exception e) {
                 // map extent can not be reprojected, cancel rendering
                 throw new RenderException("reprojecting error");
@@ -234,14 +242,14 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             }
             Tile tile = tiles.get(key);
             if (tile != null && tile.getBufferedImage() != null && tile.getTileState() != WMSTile.INERROR) {
-                renderTile(destination, (WMTTile) tile, style);
+                renderTile(destination, (WMTTile) tile, transformLayerToMap, style);
                 renderedTiles.add(key);
                 monitor.worked(tileWorth);  // inc the monitor work by 1 tile
             }
             else {
                 // set the tile blank (removing any previous content) and add it
                 // to be drawn later
-                renderBlankTile(destination, (WMTTile) tile);
+                renderBlankTile(destination, (WMTTile) tile, transformLayerToMap);
                 notRenderedTiles.add(key);
             }
         }      
@@ -325,7 +333,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                         //viewbounds.intersects(tile.getBounds()) && 
                         !renderedTiles.contains(tile.getId())) {
 
-                    renderTile(destination, (WMTTile) tile, style);
+                    renderTile(destination, (WMTTile) tile, transformLayerToMap, style);
                     renderedTiles.add(tile.getId());
                     monitor.worked(tileWorth);  // inc the monitor work by 1 tile
                     setState(RENDERING); // tell renderer new data is ready                
@@ -374,7 +382,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
      * @throws FactoryException
      * @throws TransformException
      */
-    private void renderTile(Graphics2D graphics, WMTTile tile, RasterSymbolizer style) throws FactoryException, TransformException {
+    private void renderTile(Graphics2D graphics, WMTTile tile, MathTransform transform, RasterSymbolizer style) throws FactoryException, TransformException {
         
         if (tile == null || tile.getBufferedImage() == null) {
             return;
@@ -392,7 +400,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         //convert bounds to necessary viewport projection
         if (!coverage.getCoordinateReferenceSystem().equals(getContext().getCRS())){
             // todo: how long does is take to find the transformation method? better do it once at the beginning
-            MathTransform transform = CRS.findMathTransform(coverage.getCoordinateReferenceSystem(), getContext().getCRS());
+            //MathTransform transform = CRS.findMathTransform(coverage.getCoordinateReferenceSystem(), getContext().getCRS());
             bnds = JTS.transform(bnds, transform);
         }
         
@@ -433,7 +441,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
      * @throws FactoryException 
      * @throws TransformException 
      */
-    private void renderBlankTile(Graphics2D graphics, WMTTile tile) throws FactoryException, TransformException {
+    private void renderBlankTile(Graphics2D graphics, WMTTile tile, MathTransform transform) throws FactoryException, TransformException {
         
         if (tile == null) {
             return;
@@ -444,7 +452,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
 
         // convert bounds to necessary viewport projection
         if (!tile.getExtent().getCoordinateReferenceSystem().equals(getContext().getCRS())) {
-            MathTransform transform = CRS.findMathTransform(tile.getExtent().getCoordinateReferenceSystem(), getContext().getCRS());
+            //MathTransform transform = CRS.findMathTransform(tile.getExtent().getCoordinateReferenceSystem(), getContext().getCRS());
             bnds = JTS.transform(bnds, transform);
         }
         

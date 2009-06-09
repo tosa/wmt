@@ -46,6 +46,15 @@ public class Messages extends NLS {
 	public static String WMSCTileUtils_preloadtask;
 	public static String WMSCTileUtils_preloadtasksub;
 	
+	public static String Properties_Layer_Title;
+    public static String Properties_Layer_GroupBox;
+    public static String Properties_Layer_AutomaticSelection;
+    public static String Properties_Layer_ManualSelection;
+    public static String Properties_Layer_UseZoomLevel;
+    public static String Properties_Layer_Recommended;
+    public static String Properties_Layer_Warning;
+    public static String Properties_Layer_Error;
+	
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

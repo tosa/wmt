@@ -31,6 +31,8 @@ public abstract class WMTSource {
     private ObjectCache tiles = ObjectCaches.create("soft", 50); //$NON-NLS-1$
     private List<String> tempTileList = new ArrayList<String>();
     
+    private WMTService wmtService;
+    
     public WMTSource() {
     }
     
@@ -50,6 +52,16 @@ public abstract class WMTSource {
         return 256;
     }
     
+    
+    
+    public WMTService getWmtService() {
+        return wmtService;
+    }
+
+    public void setWmtService(WMTService wmtService) {
+        this.wmtService = wmtService;
+    }
+
     //region Methods to access the tile-list
     public boolean listContainsTile(String tileId) {
         System.out.println("ListContainsTile: " + (tiles.peek(tileId) == null) + " - " + (tiles.get(tileId) == null));

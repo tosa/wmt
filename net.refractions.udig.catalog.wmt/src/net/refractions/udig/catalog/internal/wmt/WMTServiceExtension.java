@@ -5,9 +5,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.refractions.udig.catalog.IService;
 import net.refractions.udig.catalog.ServiceExtension;
-import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMMapnikSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 

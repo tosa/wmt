@@ -24,4 +24,13 @@
     </wizardPage>
 
  </extension>
+ 
+    <extension
+         point="org.eclipse.ui.propertyPages">
+      <page
+            class="net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerProperties"
+            id="net.refractions.udig.catalog.internal.wmt.ui.properties.wmtlayerproperties"
+            name="%propertiesLayer.name"
+            objectClass="net.refractions.udig.project.ILayer"/>    
+   </extension>
 </plugin>
