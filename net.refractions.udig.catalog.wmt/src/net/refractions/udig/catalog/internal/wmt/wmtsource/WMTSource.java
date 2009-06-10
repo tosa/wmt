@@ -1,5 +1,6 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -21,6 +22,10 @@ import net.refractions.udig.core.internal.CorePlugin;
  * @since 1.1.0
  */
 public abstract class WMTSource {
+    // todo: move into properties
+    public static int SCALE_FACTOR = 50;
+    
+    
     private String name;
     
     /** 
@@ -156,7 +161,6 @@ public abstract class WMTSource {
             }
         }
         
-       // return zoomLevel;
         // Now apply the scale-factor
         if (zoomLevel == 0) {
             return zoomLevel;
@@ -167,35 +171,85 @@ public abstract class WMTSource {
             double deltaScale = scaleList[upperScaleIndex] - scaleList[lowerScaleIndex];
             double rangeScale = (scaleFactor / 100d) * deltaScale;
             double limitScale = scaleList[lowerScaleIndex] + rangeScale;
+            
             if (scale > limitScale) {
                 return upperScaleIndex;
             } else {
                 return lowerScaleIndex;
             }
         }
+    }
+    
+    /**
+     * Returns the zoom-level that should be used to fetch the tiles.
+     *
+     * @param scale
+     * @param scaleFactor
+     * @param useRecommended
+     * @return
+     */
+    public int getZoomLevelToUse(double scale, int scaleFactor, boolean useRecommended) {
+        if (useRecommended) {
+            return getZoomLevelFromMapScale(scale, scaleFactor);            
+        }
         
-        // Scale-Up
-//        for (int i = scaleList.length-2; i >= 0; i--) {
-//            if (Double.isNaN(scaleList[i])) break;
-//            
-//            if (scale > scaleList[i+1]) {
-//                zoomLevel = i;
-//            }            
-//        }
+        // try to load the property values
+        boolean selectionAutomatic = false;
+        int zoomLevel = -1;
         
-        // Scale-Down
-//        for (int i = scaleList.length-2; i >= 0; i--) {
-//            if (Double.isNaN(scaleList[i])) break;
-//            if (scale < scaleList[i]) break;
-//            
-//            zoomLevel = i;
-////            if (scale > scaleList[i+1]) {
-////                zoomLevel = i;
-////            }
-//            
-//        }
+        try {
+            Map<String, Serializable> properties = getWmtService().getPersistentProperties();
+            
+            selectionAutomatic = (Boolean) properties.get(WMTService.KEY_PROPERTY_ZOOM_LEVEL_SELECTION_AUTOMATIC);
+            zoomLevel = (Integer) properties.get(WMTService.KEY_PROPERTY_ZOOM_LEVEL_VALUE);
+        } catch(Exception exc) {
+            // cast failed or properties do not contain the keys
+            selectionAutomatic = true;
+            zoomLevel = -1;
+        }
         
-        //return zoomLevel;
+        if (!selectionAutomatic && 
+                ((zoomLevel >= getMinZoomLevel()) && (zoomLevel <= getMaxZoomLevel()))) {
+            // the zoom-level from the properties is valid, so let's take it
+            return zoomLevel;
+        } else {
+            // No valid property values or automatic selection of the zoom-level
+            return getZoomLevelFromMapScale(scale, scaleFactor);
+        }
+    }
+    
+    /**
+     * Returns the lowest zoom-level number from the scaleList.
+     *
+     * @param scaleList
+     * @return
+     */
+    public int getMinZoomLevel() {
+        double[] scaleList = getScaleList();
+        int minZoomLevel = 0;
+        
+        while (Double.isNaN(scaleList[minZoomLevel]) && (minZoomLevel < scaleList.length)) {
+            minZoomLevel++;
+        }
+        
+        return minZoomLevel;       
+    }
+    
+    /**
+     * Returns the highest zoom-level number from the scaleList.
+     *
+     * @param scaleList
+     * @return
+     */
+    public int getMaxZoomLevel() {
+        double[] scaleList = getScaleList();
+        int maxZoomLevel = scaleList.length - 1;
+        
+        while (Double.isNaN(scaleList[maxZoomLevel]) && (maxZoomLevel >= 0)) {
+            maxZoomLevel--;
+        }
+        
+        return maxZoomLevel;
     }
     //endregion
     
@@ -206,10 +260,12 @@ public abstract class WMTSource {
      * @param extent The extent which should be cut.
      * @param scale The map scale.
      * @param scaleFactor The scale-factor (0-100): scale up or down?
+     * @param recommendedZoomLevel Force to use the recommend zoom-level 
      * @return The list of found tiles.
      */
-    public abstract Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale, int scaleFactor);
-    //endregion
+    public abstract Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, 
+            double scale, int scaleFactor, boolean recommendedZoomLevel);
+        //endregion
     
     @Override
     public String toString() {

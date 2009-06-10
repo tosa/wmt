@@ -19,7 +19,7 @@ package net.refractions.udig.render.wmt.basic.internal;
 import org.eclipse.osgi.util.NLS;
 
 public class Messages extends NLS {
-	private static final String BUNDLE_NAME = "net.refractions.udig.render.wms.basic.internal.messages"; //$NON-NLS-1$
+	private static final String BUNDLE_NAME = "net.refractions.udig.render.wmt.basic.internal.messages"; //$NON-NLS-1$
 	public static String BasicWMSRenderer2_error;
 	public static String BasicWMSRenderer2_errorObtainingImage;
 	public static String BasicWMSRenderer2_no_layers_to_render;
@@ -40,6 +40,9 @@ public class Messages extends NLS {
 	public static String WMSCTilePreferencePage_clearcacheError;
 	public static String WMSCTilePreferencePage_clearcacheSuccess;
 	public static String WMSCTilePreferencePage_maxConRequests;
+	
+	public static String WARNING_TOO_MANY_TILES;
+	public static String ERROR_LAYER;
     
 	static {
 		// initialize resource bundle

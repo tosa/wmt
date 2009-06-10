@@ -93,14 +93,14 @@ public abstract class OSMSource extends WMTSource {
      * @param scaleFactor The scale-factor (0-100): scale up or down?
      * @return The list of found tiles.
      */
-    public Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale, int scaleFactor) {
-        OSMZoomLevel zoomLevel = new OSMZoomLevel(getZoomLevelFromMapScale(scale, scaleFactor));
+    public Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale, int scaleFactor, boolean recommendedZoomLevel) {
+        OSMZoomLevel zoomLevel = new OSMZoomLevel(getZoomLevelToUse(scale, scaleFactor, recommendedZoomLevel));
         long maxNumberOfTiles = ((long) zoomLevel.getMaxTileNumber()) * ((long) zoomLevel.getMaxTileNumber());
                 
         Map<String, Tile> tileList = new HashMap<String, Tile>();
         
-        System.out.println("MinX: " + extent.getMinX() + "MaxX: " + extent.getMaxX());
-        System.out.println("MinY: " + extent.getMinY() + "MaxY: " + extent.getMaxY());
+        System.out.println("MinX: " + extent.getMinX() + " MaxX: " + extent.getMaxX());
+        System.out.println("MinY: " + extent.getMinY() + " MaxY: " + extent.getMaxY());
         
         // Let's get the first tile which covers the upper-left corner
         OSMTile firstTile = OSMTile.getTileFromCoordinate(extent.getMaxY(), extent.getMinX(), zoomLevel, this);
