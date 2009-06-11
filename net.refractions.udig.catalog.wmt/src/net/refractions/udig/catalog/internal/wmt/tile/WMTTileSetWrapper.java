@@ -49,7 +49,8 @@ public class WMTTileSetWrapper extends WMSTileSet {
 
     @Override
     public String getFormat() {
-        return super.getFormat();
+        //return super.getFormat();
+        return "image\\png"; //$NON-NLS-1$
     }
 
     @Override
@@ -88,69 +89,9 @@ public class WMTTileSetWrapper extends WMSTileSet {
     }
 
     @Override
-    public long getTileCount(Envelope bounds, double zoom) {
-        return super.getTileCount(bounds, zoom);
-    }
-
-    @Override
-    public Map<String, Tile> getTilesFromViewportScale( Envelope bounds, double viewportScale ) {
-        return super.getTilesFromViewportScale(bounds, viewportScale);
-    }
-
-    @Override
-    public Map<String, Tile> getTilesFromZoom( Envelope bounds, double zoom ) {
-        return super.getTilesFromZoom(bounds, zoom);
-    }
-
-    @Override
     public int getWidth() {
         return wmtSource.getTileWidth();
     }
-
-    @Override
-    public void setBoundingBox( CRSEnvelope bbox ) {
-        super.setBoundingBox(bbox);
-    }
-
-    @Override
-    public void setCoorindateReferenceSystem( String epsg ) {
-        super.setCoorindateReferenceSystem(epsg);
-    }
-
-    @Override
-    public void setFormat( String format ) {
-        super.setFormat(format);
-    }
-
-    @Override
-    public void setHeight( int height ) {
-        super.setHeight(height);
-    }
-
-    @Override
-    public void setLayers( String layers ) {
-        super.setLayers(layers);
-    }
-
-    @Override
-    public void setResolutions( String res ) {
-        super.setResolutions(res);
-    }
-
-    @Override
-    public void setServer( TiledWebMapServer server ) {
-        super.setServer(server);
-    }
-
-    @Override
-    public void setStyles( String styles ) {
-        super.setStyles(styles);
-    }
-
-    @Override
-    public void setWidth( int width ) {
-        super.setWidth(width);
-    }
-    
+   
 
 }

@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Random;
 
@@ -54,6 +55,10 @@ public abstract class WMTTile implements Tile{
         return tileName.getId();
     }
     
+    public String getReleatedSourceName() {
+        return tileName.getSource().getName();
+    }
+    
     /**
      * 
      * @see net.refractions.udig.catalog.wmsc.server.WMSTile#loadTile(org.eclipse.core.runtime.IProgressMonitor)
@@ -67,8 +72,8 @@ public abstract class WMTTile implements Tile{
 //            HttpURLConnection connection = null;
 //            connection = (HttpURLConnection) getUrl().openConnection();
 //
-//            inputStream = connection.getInputStream();
-
+//             if (connection.getResponseCode() == 200)
+            
             bufImage = ImageIO.read(getUrl()); //(inputStream);
 
             if (bufImage != null) {

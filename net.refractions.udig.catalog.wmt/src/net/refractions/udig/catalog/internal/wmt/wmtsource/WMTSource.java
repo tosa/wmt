@@ -34,7 +34,7 @@ public abstract class WMTSource {
      * out of Memory, the GC will free space.
      **/
     private ObjectCache tiles = ObjectCaches.create("soft", 50); //$NON-NLS-1$
-    private List<String> tempTileList = new ArrayList<String>();
+    private List<String> tempTileList = new ArrayList<String>(); // just for testing (i will take this out later)
     
     private WMTService wmtService;
     

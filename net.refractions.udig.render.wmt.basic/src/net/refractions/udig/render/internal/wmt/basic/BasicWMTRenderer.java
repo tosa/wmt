@@ -32,12 +32,15 @@ import net.refractions.udig.catalog.internal.PreferenceConstants;
 import net.refractions.udig.catalog.internal.wms.WmsPlugin;
 import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
+import net.refractions.udig.catalog.internal.wmt.tile.WMTTileImageReadWriter;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTileSetWrapper;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.catalog.wmsc.server.Tile;
 import net.refractions.udig.catalog.wmsc.server.TileListener;
 import net.refractions.udig.catalog.wmsc.server.TileRange;
 import net.refractions.udig.catalog.wmsc.server.TileRangeInMemory;
+//import net.refractions.udig.catalog.wmsc.server.TileRangeOnDisk;
+import net.refractions.udig.catalog.internal.wmt.tile.TileRangeOnDisk;
 import net.refractions.udig.catalog.wmsc.server.TileSet;
 import net.refractions.udig.catalog.wmsc.server.TileWorkerQueue;
 import net.refractions.udig.catalog.wmsc.server.WMSTile;
@@ -224,8 +227,11 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                     
             String value = CatalogPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.P_WMSCTILE_CACHING);
             if (value.equals(WMSCTileCaching.ONDISK.toString())) {
-                // todo: not working yet!
-                //range = new TileRangeOnDisk(null, tileset, bnds, tileList, requestTileWorkQueue, writeTileWorkQueue);
+                String dir = CatalogPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.P_WMSCTILE_DISKDIR);
+                WMTTileImageReadWriter tileReadWriter = new WMTTileImageReadWriter(dir);
+                
+                range = new TileRangeOnDisk(null, tileset, bnds, tileList, 
+                        requestTileWorkQueue, writeTileWorkQueue, tileReadWriter);
             }
             else {
                 range = new TileRangeInMemory(null, tileset, bnds, tileList, requestTileWorkQueue);
