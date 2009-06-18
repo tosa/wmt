@@ -48,5 +48,16 @@
           properties="showTest"
           type="net.refractions.udig.project.ILayer">
     </propertyTester>
+  </extension>
+  <extension
+        point="org.eclipse.ui.views">
+     <view
+           allowMultiple="false"
+           class="net.refractions.udig.catalog.internal.wmt.ui.view.WMTZoomLevelSwitcher"
+           icon="icons/etool16/wms_wiz.gif"
+           id="net.refractions.udig.catalog.wmt.viewZoomLevelSwitcher"
+           name="viewZoomLevelSwitcher"
+           restorable="true">
+     </view>
   </extension>   
 </plugin>

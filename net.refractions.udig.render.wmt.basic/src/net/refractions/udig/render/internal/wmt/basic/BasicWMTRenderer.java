@@ -422,7 +422,6 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
 
         //convert bounds to necessary viewport projection
         if (!layerCRS.equals(mapCRS)){
-            // todo: how long does is take to find the transformation method? better do it once at the beginning
             //MathTransform transform = CRS.findMathTransform(coverage.getCoordinateReferenceSystem(), getContext().getCRS());
             bnds = JTS.transform(bnds, transform);
         }

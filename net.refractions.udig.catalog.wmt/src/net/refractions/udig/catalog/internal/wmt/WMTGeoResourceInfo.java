@@ -34,7 +34,7 @@ class WMTGeoResourceInfo extends IGeoResourceInfo {
         this.title = this.resource.getTitle();
         
         //todo: set bounds so that the whole map is shown
-        //this.bounds = new ReferencedEnvelope(-180, 180, -90, 90, DefaultGeographicCRS.WGS84);
+        this.bounds = new ReferencedEnvelope(-180, 180, -90, 90, DefaultGeographicCRS.WGS84);
                   
     }
     @Override
