@@ -65,7 +65,6 @@ public abstract class WMTTile implements Tile{
      */
     public void download() {
         BufferedImage bufImage = null;
-        InputStream inputStream = null;
         try {
 
             // todo: check if file exists via http-return-code?
@@ -74,7 +73,7 @@ public abstract class WMTTile implements Tile{
 //
 //             if (connection.getResponseCode() == 200)
             
-            bufImage = ImageIO.read(getUrl()); //(inputStream);
+            bufImage = ImageIO.read(getUrl()); 
 
             if (bufImage != null) {
                 image = bufImage;
@@ -84,19 +83,9 @@ public abstract class WMTTile implements Tile{
                 // create an error buffered image
                 System.out.println("download failed: " + getUrl().toString());
             }
-        } catch (Exception e1) {
+        } catch (Exception e) {
             System.out.println("download failed: " + getUrl().toString());
-        } catch (Throwable t) {
-            System.out.println("download failed: " + getUrl().toString());
-        } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    System.out.println("failed to close input stream!!!"); //$NON-NLS-1$
-                }
-            }
-        }
+        }      
     }
 
     public Envelope getBounds() {

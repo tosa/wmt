@@ -1,18 +1,15 @@
 package net.refractions.udig.catalog.internal.wmt.tile;
 
 import java.util.List;
-import java.util.Map;
 
-import org.geotools.data.ows.CRSEnvelope;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
+import net.refractions.udig.catalog.wmsc.server.TiledWebMapServer;
+import net.refractions.udig.catalog.wmsc.server.WMSTileSet;
+
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Envelope;
-
-import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
-import net.refractions.udig.catalog.wmsc.server.Tile;
-import net.refractions.udig.catalog.wmsc.server.TiledWebMapServer;
-import net.refractions.udig.catalog.wmsc.server.WMSTileSet;
 
 public class WMTTileSetWrapper extends WMSTileSet {
     private WMTSource wmtSource;
@@ -65,7 +62,7 @@ public class WMTTileSetWrapper extends WMSTileSet {
 
     @Override
     public String getLayers() {
-        return "";
+        return ""; //$NON-NLS-1$
     }
 
     @Override
@@ -85,7 +82,7 @@ public class WMTTileSetWrapper extends WMSTileSet {
 
     @Override
     public String getStyles() {
-        return "";
+        return ""; //$NON-NLS-1$
     }
 
     @Override

@@ -8,8 +8,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.referencing.CRS;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.util.ObjectCache;
 import org.geotools.util.ObjectCaches;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
@@ -57,6 +61,55 @@ public abstract class WMTSource {
         return 256;
     }
     
+    public ReferencedEnvelope getBounds() {
+        return new ReferencedEnvelope(-180, 180, -85.051, 85.0511, DefaultGeographicCRS.WGS84);        
+    }
+    
+    public static final CoordinateReferenceSystem CRS_EPSG_900913;    
+    static {
+        CoordinateReferenceSystem crs = null;
+        
+        try {
+            crs = CRS.decode("EPSG:900913"); //$NON-NLS-1$
+        } catch (Exception exc1) {
+            String wkt =
+                "PROJCS[\"Google Mercator\","+
+               "GEOGCS[\"WGS 84\","+
+                "    DATUM[\"World Geodetic System 1984\"," +
+                "        SPHEROID[\"WGS 84\",6378137.0,298.257223563," +
+                "            AUTHORITY[\"EPSG\",\"7030\"]]," +
+                "        AUTHORITY[\"EPSG\",\"6326\"]]," +
+                "    PRIMEM[\"Greenwich\",0.0," +
+                "        AUTHORITY[\"EPSG\",\"8901\"]]," +
+                "    UNIT[\"degree\",0.017453292519943295]," +
+                "    AXIS[\"Geodetic latitude\",NORTH]," +
+                "    AXIS[\"Geodetic longitude\",EAST]," +
+                "    AUTHORITY[\"EPSG\",\"4326\"]]," +
+                "PROJECTION[\"Mercator_1SP\"]," +
+                "PARAMETER[\"semi_minor\",6378137.0]," +
+                "PARAMETER[\"latitude_of_origin\",0.0]," +
+                "PARAMETER[\"central_meridian\",0.0]," +
+                "PARAMETER[\"scale_factor\",1.0],"+
+                "PARAMETER[\"false_easting\",0.0]," +
+                "PARAMETER[\"false_northing\",0.0]," +
+                "UNIT[\"m\",1.0]," +
+                "AXIS[\"Easting\",EAST]," +
+                "AXIS[\"Northing\",NORTH]," +
+                "AUTHORITY[\"EPSG\",\"900913\"]]";
+            
+            try {
+                crs = CRS.parseWKT(wkt);
+            } catch (Exception exc2) {
+                crs = DefaultGeographicCRS.WGS84;
+            }
+        }
+        
+        CRS_EPSG_900913 = crs;
+    }
+    
+    public CoordinateReferenceSystem getCrsOfProjectedTiles() {
+        return WMTSource.CRS_EPSG_900913;
+    }
     
     
     public WMTService getWmtService() {

@@ -413,17 +413,90 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         
         // create a gridcoverage from the tile image        
         GridCoverageFactory factory = new GridCoverageFactory();
-        GridCoverage2D coverage = (GridCoverage2D) factory.create("GridCoverage", tile.getBufferedImage(), tile.getExtent()); //$NON-NLS-1$        
+        
+        //CoordinateReferenceSystem mercator1 = CRS.decode("EPSG:3785");
+        //CoordinateReferenceSystem mercator2 = CRS.decode("EPSG:900913");
+        
+        String wkt =
+            "PROJCS[\"Google Mercator\","+
+    "GEOGCS[\"WGS 84\","+
+     "   DATUM[\"World Geodetic System 1984\","+
+      "      SPHEROID[\"WGS 84\",6378137.0,298.257223563,"+
+       "         AUTHORITY[\"EPSG\",\"7030\"]],"+
+       "     AUTHORITY[\"EPSG\",\"6326\"]],"+
+        "PRIMEM[\"Greenwich\",0.0,"+
+         "   AUTHORITY[\"EPSG\",\"8901\"]],"+
+        "UNIT[\"degree\",0.017453292519943295],"+
+        "AXIS[\"Geodetic latitude\",NORTH],"+
+        "AXIS[\"Geodetic longitude\",EAST],"+
+        "AUTHORITY[\"EPSG\",\"4326\"]],"+
+    "PROJECTION[\"Mercator_1SP\"],"+
+    "PARAMETER[\"semi_minor\",6378137.0],"+
+    "PARAMETER[\"latitude_of_origin\",0.0],"+
+    "PARAMETER[\"central_meridian\",0.0],"+
+    "PARAMETER[\"scale_factor\",1.0],"+
+    "PARAMETER[\"false_easting\",0.0],"+
+    "PARAMETER[\"false_northing\",0.0],"+
+    "UNIT[\"m\",1.0],"+
+    "AXIS[\"Easting\",EAST],"+
+    "AXIS[\"Northing\",NORTH],"+
+    "AUTHORITY[\"EPSG\",\"900913\"]]";
+        
+        // EPSG:3785 does not work properly
+//        String wkt =
+//        "PROJCS[\"Popular Visualisation CRS / Mercator\","+
+//         "      GEOGCS[\"Popular Visualisation CRS\","+
+//          "         DATUM[\"Popular_Visualisation_Datum\","+
+//           "            SPHEROID[\"Popular Visualisation Sphere\",6378137,0,"+
+//            "               AUTHORITY[\"EPSG\",\"7059\"]],"+
+//             "          TOWGS84[0,0,0,0,0,0,0],"+
+//              "         AUTHORITY[\"EPSG\",\"6055\"]],"+
+//               "    PRIMEM[\"Greenwich\",0,"+
+//                "       AUTHORITY[\"EPSG\",\"8901\"]],"+
+//                 "  UNIT[\"degree\",0.01745329251994328,"+
+//                  "     AUTHORITY[\"EPSG\",\"9122\"]],"+
+//                   "AUTHORITY[\"EPSG\",\"4055\"]],"+
+//               "UNIT[\"metre\",1,"+
+//                "   AUTHORITY[\"EPSG\",\"9001\"]],"+
+//               "PROJECTION[\"Mercator_1SP\"],"+
+//               "PARAMETER[\"central_meridian\",0],"+
+//               "PARAMETER[\"scale_factor\",1],"+
+//               "PARAMETER[\"false_easting\",0],"+
+//               "PARAMETER[\"false_northing\",0],"+
+//               "AUTHORITY[\"EPSG\",\"3785\"],"+
+//               "AXIS[\"X\",EAST],"+
+//               "AXIS[\"Y\",NORTH]]";
+        
+          CoordinateReferenceSystem googleCRS = CRS.parseWKT(wkt);
+        //CoordinateReferenceSystem googleCRS = CRS.decode("EPSG:3395");
+          
+        MathTransform transformWGSToMercator = CRS.findMathTransform(tile.getExtent().getCoordinateReferenceSystem(), googleCRS);
+        MathTransform transformMercatorToMap = CRS.findMathTransform(googleCRS, mapCRS);
+        
+        
+         Envelope tileBndsMercator = JTS.transform(tile.getExtent(), transformWGSToMercator);
+         ReferencedEnvelope refEnv = new ReferencedEnvelope(tileBndsMercator, googleCRS); 
+         // convert tileBounds to GoogleCRS
+        
+         
+         GridCoverage2D coverage = (GridCoverage2D) factory.create("GridCoverage", tile.getBufferedImage(), refEnv); //$NON-NLS-1$        
+         
+        //GridCoverage2D coverage = (GridCoverage2D) factory.create("GridCoverage", tile.getBufferedImage(), tile.getExtent()); //$NON-NLS-1$        
         Envelope2D coveragebounds = coverage.getEnvelope2D();
 
         // bounds of tile
         Envelope bnds = new Envelope(coveragebounds.getMinX(), coveragebounds.getMaxX(), coveragebounds.getMinY(),
                 coveragebounds.getMaxY());
-
+        
+        
         //convert bounds to necessary viewport projection
-        if (!layerCRS.equals(mapCRS)){
+//        if (!layerCRS.equals(mapCRS)){
+//            //MathTransform transform = CRS.findMathTransform(coverage.getCoordinateReferenceSystem(), getContext().getCRS());
+//            bnds = JTS.transform(bnds, transform);
+//        }
+        if (!googleCRS.equals(mapCRS)){
             //MathTransform transform = CRS.findMathTransform(coverage.getCoordinateReferenceSystem(), getContext().getCRS());
-            bnds = JTS.transform(bnds, transform);
+            bnds = JTS.transform(bnds, transformMercatorToMap);
         }
         
         //determine screen coordinates of tiles
@@ -431,7 +504,8 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         Point bottomRight = getContext().worldToPixel(new Coordinate(bnds.getMaxX(), bnds.getMaxY()));
         Rectangle tileSize = new Rectangle(upperLeft);
         tileSize.add(bottomRight);
-
+        
+        
         //render
         try{
             GridCoverageRenderer paint = new GridCoverageRenderer(getContext().getCRS(), bnds, tileSize);

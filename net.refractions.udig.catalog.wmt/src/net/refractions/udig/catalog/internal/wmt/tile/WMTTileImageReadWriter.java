@@ -39,6 +39,13 @@ public class WMTTileImageReadWriter extends TileImageReadWriter {
                 tile.getPosition() + "." + filetype); //$NON-NLS-1$
     }
     
+    /**
+     * Concatenates two paths.
+     *
+     * @param baseDir
+     * @param subDir
+     * @return
+     */
     public static String pathCombine(String baseDir, String subDir) {
         File base = new File(baseDir);
         File sub = new File(base, subDir);
