@@ -19,8 +19,6 @@ import java.io.IOException;
 import net.refractions.udig.catalog.IGeoResourceInfo;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 
@@ -31,15 +29,13 @@ class WMTGeoResourceInfo extends IGeoResourceInfo {
     WMTGeoResourceInfo(WMTGeoResource resource, IProgressMonitor monitor ) throws IOException {
         this.resource = resource;
         
-        this.title = this.resource.getTitle();
-        
-        //todo: set bounds so that the whole map is shown
-        this.bounds = new ReferencedEnvelope(-180, 180, -90, 90, DefaultGeographicCRS.WGS84);
+        this.title = this.resource.getTitle();        
+        this.bounds = this.resource.getSource().getBounds();
                   
     }
     @Override
     public CoordinateReferenceSystem getCRS() {
-        return DefaultGeographicCRS.WGS84;
+        return this.resource.getSource().getTileCrs();
     }
     
     

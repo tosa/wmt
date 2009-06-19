@@ -7,18 +7,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import net.refractions.udig.catalog.internal.wmt.WMTService;
+import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
+import net.refractions.udig.catalog.wmsc.server.Tile;
+import net.refractions.udig.core.internal.CorePlugin;
+
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.util.ObjectCache;
 import org.geotools.util.ObjectCaches;
-import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
-
-import net.refractions.udig.catalog.internal.wmt.WMTService;
-import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
-import net.refractions.udig.catalog.wmsc.server.Tile;
-import net.refractions.udig.core.internal.CorePlugin;
 
 /**
  *
@@ -65,6 +64,7 @@ public abstract class WMTSource {
         return new ReferencedEnvelope(-180, 180, -85.051, 85.0511, DefaultGeographicCRS.WGS84);        
     }
     
+    //region CRS
     public static final CoordinateReferenceSystem CRS_EPSG_900913;    
     static {
         CoordinateReferenceSystem crs = null;
@@ -107,9 +107,24 @@ public abstract class WMTSource {
         CRS_EPSG_900913 = crs;
     }
     
-    public CoordinateReferenceSystem getCrsOfProjectedTiles() {
+    /**
+     * The projection the tiles are drawn in.
+     *
+     * @return
+     */
+    public CoordinateReferenceSystem getProjectedTileCrs() {
         return WMTSource.CRS_EPSG_900913;
     }
+    
+    /**
+     * The CRS that is used when the extent is cut in tiles.
+     *
+     * @return
+     */
+    public CoordinateReferenceSystem getTileCrs() {
+        return DefaultGeographicCRS.WGS84;
+    }
+    //endregion
     
     
     public WMTService getWmtService() {
