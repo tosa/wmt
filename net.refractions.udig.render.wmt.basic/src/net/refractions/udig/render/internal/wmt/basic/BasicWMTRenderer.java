@@ -62,10 +62,12 @@ import org.geotools.referencing.CRS;
 import org.geotools.renderer.lite.gridcoverage2d.GridCoverageRenderer;
 import org.geotools.styling.RasterSymbolizer;
 import org.geotools.styling.StyleBuilder;
+import org.opengis.geometry.MismatchedDimensionException;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
+import org.opengis.referencing.operation.Transformation;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
@@ -102,6 +104,11 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
     private CoordinateReferenceSystem crsMap;
     private CoordinateReferenceSystem crsTiles;
     private CoordinateReferenceSystem crsTilesProjected;
+    
+    MathTransform transformMapToTileCrs = null;
+    MathTransform transformTileCrsToMap = null;
+    MathTransform transformTileCrsToTilesProjected = null;
+    MathTransform transformTilesProjectedToMap = null;
     
     /**
      * Construct a new BasicWMTRenderer
@@ -162,72 +169,20 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                 mapExtent = context.getViewportModel().getBounds();
             }
             
+            //region CRS and transformations
             // Get several CRS's
             crsMap = mapExtent.getCoordinateReferenceSystem();
             crsTiles = wmtSource.getTileCrs(); // the CRS used for the tile cutting 
             crsTilesProjected = wmtSource.getProjectedTileCrs(); // the CRS the tiles were projected in
-                                
-            ReferencedEnvelope mapExtentProjected;
-            MathTransform transformMapToTileCrs = null;
-            MathTransform transformTileCrsToMap = null;
-            MathTransform transformTileCrsToTilesProjected = null;
-            MathTransform transformTilesProjectedToMap = null;
-            /*
-             * Compare CoordinateReferenceSystem:
-             * http://docs.codehaus.org/display/GEOTDOC/05+Use+of+Equals+with+CoordinateReferenceSystem+and+Datum    
-             */        
-            //if(mapCRS.getName().equals(layerCRS.getName())) {
-            // Transformation: MapCrs -> TileCrs (mostly WGS_84)
-            if(crsMap.equals(crsTiles)) {
-                // no need to reproject
-                mapExtentProjected = mapExtent;
-            } else {         
-                // Reproject map extent
-                try {   
-                    // Let's find a transformation to reproject the map extent
-                    transformMapToTileCrs = CRS.findMathTransform(crsMap, crsTiles);
-                                        
-                    mapExtentProjected = new ReferencedEnvelope(JTS.transform(mapExtent, transformMapToTileCrs), crsTiles);
-                } catch (Exception e) {
-                    // map extent can not be reprojected, cancel rendering
-                    throw new RenderException("reprojecting error");
-                    //todo: nice error message
-                }            
-            }
+                       
+            // get transformations for reprojections between the CRS's
+            findTransformation();            
+            //endregion
             
-            // Transformation: TileCrs (mostly WGS_84) -> MapCrs (needed for the blank tiles)
-            if(!crsMap.equals(crsTiles)) {
-                try {
-                    transformTileCrsToMap = CRS.findMathTransform(crsTiles, crsMap);
-                } catch(Exception exc) {
-                    // tile could not be reprojected, cancel rendering
-                    throw new RenderException("reprojecting error");
-                    //todo: nice error message
-                }
-            }
-            
-            // Transformation: TileCrs (mostly WGS_84) -> TilesProjectedCrs (mostly Google's Mercator)
-            if(!crsTilesProjected.equals(crsTiles)) {
-                try {
-                    transformTileCrsToTilesProjected = CRS.findMathTransform(crsTiles, crsTilesProjected);
-                } catch(Exception exc) {
-                    // tile could not be reprojected, cancel rendering
-                    throw new RenderException("reprojecting error");
-                    //todo: nice error message
-                }
-            }
-            
-            // Transformation: TilesProjectedCrs (mostly Google's Mercator) -> MapCrs
-            if(!crsTilesProjected.equals(crsMap)) {
-                try {
-                    transformTilesProjectedToMap = CRS.findMathTransform(crsTilesProjected, crsMap);
-                } catch(Exception exc) {
-                    // tile could not be reprojected, cancel rendering
-                    throw new RenderException("reprojecting error");
-                    //todo: nice error message
-                }
-            }
-            
+            // Get the mapExtent in the tiles CRS
+            ReferencedEnvelope mapExtentProjected = getProjectedEnvelope(mapExtent, 
+                    crsTiles, transformMapToTileCrs);
+                        
             // Scale
             double scale = getContext().getViewportModel().getScaleDenominator();
             System.out.println("Scale: " +  scale + " -  zoom-level: " + wmtSource.getZoomLevelFromMapScale(scale, WMTSource.SCALE_FACTOR) + 
@@ -257,18 +212,17 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             TileRange range = null;
             
             TileSet tileset = new WMTTileSetWrapper(wmtSource);
-            com.vividsolutions.jts.geom.Envelope bnds = mapExtentProjected;//new com.vividsolutions.jts.geom.Envelope(mapExtentProjected.getMinX(), mapExtentProjected.getMaxX(), mapExtentProjected.getMinY(), mapExtentProjected.getMaxY());
-                    
+     
             String value = CatalogPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.P_WMSCTILE_CACHING);
             if (value.equals(WMSCTileCaching.ONDISK.toString())) {
                 String dir = CatalogPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.P_WMSCTILE_DISKDIR);
                 WMTTileImageReadWriter tileReadWriter = new WMTTileImageReadWriter(dir);
                 
-                range = new TileRangeOnDisk(null, tileset, bnds, tileList, 
+                range = new TileRangeOnDisk(null, tileset, mapExtentProjected, tileList, 
                         requestTileWorkQueue, writeTileWorkQueue, tileReadWriter);
             }
             else {
-                range = new TileRangeInMemory(null, tileset, bnds, tileList, requestTileWorkQueue);
+                range = new TileRangeInMemory(null, tileset, mapExtentProjected, tileList, requestTileWorkQueue);
             }
             
             // create an empty raster symbolizer for rendering 
@@ -299,15 +253,14 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                 }
                 Tile tile = tiles.get(key);
                 if (tile != null && tile.getBufferedImage() != null && tile.getTileState() != WMSTile.INERROR) {
-                    renderTile(destination, (WMTTile) tile, transformTileCrsToTilesProjected, 
-                            transformTilesProjectedToMap, style);
+                    renderTile(destination, (WMTTile) tile, style);
                     renderedTiles.add(key);
                     monitor.worked(tileWorth);  // inc the monitor work by 1 tile
                 }
                 else {
                     // set the tile blank (removing any previous content) and add it
                     // to be drawn later
-                    renderBlankTile(destination, (WMTTile) tile, transformTileCrsToMap);
+                    renderBlankTile(destination, (WMTTile) tile);
                     notRenderedTiles.add(key);
                 }
             }      
@@ -391,8 +344,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                             //viewbounds.intersects(tile.getBounds()) && 
                             !renderedTiles.contains(tile.getId())) {
     
-                        renderTile(destination, (WMTTile) tile, transformTileCrsToTilesProjected, 
-                                transformTilesProjectedToMap, style);
+                        renderTile(destination, (WMTTile) tile, style);
                         renderedTiles.add(tile.getId());
                         monitor.worked(tileWorth);  // inc the monitor work by 1 tile
                         setState(RENDERING); // tell renderer new data is ready                
@@ -428,10 +380,10 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
      * @param style
      * @throws FactoryException
      * @throws TransformException
+     * @throws RenderException 
      */
     private void renderTile(Graphics2D graphics, WMTTile tile, 
-            MathTransform transformTileCrsToTilesProjected, MathTransform transformTilesProjectedToMap,
-            RasterSymbolizer style) throws FactoryException, TransformException {
+            RasterSymbolizer style) throws FactoryException, TransformException, RenderException {
         
         if (tile == null || tile.getBufferedImage() == null) {
             return;
@@ -441,23 +393,21 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         GridCoverageFactory factory = new GridCoverageFactory();
         
         // get the tile bounds in the CRS the tiles were drawn in
-        Envelope tileBndsMercator = JTS.transform(tile.getExtent(), transformTileCrsToTilesProjected);
-        ReferencedEnvelope tileBndsMercatorRef = new ReferencedEnvelope(tileBndsMercator, crsTilesProjected); 
-         
+        ReferencedEnvelope tileBndsMercatorRef = getProjectedEnvelope(tile.getExtent(), 
+                crsTilesProjected, transformTileCrsToTilesProjected); 
         
         GridCoverage2D coverage = (GridCoverage2D) factory.create("GridCoverage", tile.getBufferedImage(), tileBndsMercatorRef); //$NON-NLS-1$        
          
         Envelope2D coveragebounds = coverage.getEnvelope2D();
 
         // bounds of tile
-        Envelope bnds = new Envelope(coveragebounds.getMinX(), coveragebounds.getMaxX(), coveragebounds.getMinY(),
-                coveragebounds.getMaxY());
+        ReferencedEnvelope bnds = new ReferencedEnvelope(coveragebounds.getMinX(), coveragebounds.getMaxX(), 
+                coveragebounds.getMinY(), coveragebounds.getMaxY(), crsTilesProjected);
         
         // reproject tile bounds to map CRS
-        if (!crsTilesProjected.equals(crsMap)){
-            bnds = JTS.transform(bnds, transformTilesProjectedToMap);
-        }
-        
+        bnds = getProjectedEnvelope(bnds, crsMap, transformTilesProjectedToMap);
+       
+
         //determine screen coordinates of tiles
         Point upperLeft = getContext().worldToPixel(new Coordinate(bnds.getMinX(), bnds.getMinY()));
         Point bottomRight = getContext().worldToPixel(new Coordinate(bnds.getMaxX(), bnds.getMaxY()));
@@ -494,21 +444,16 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
      * @param style raster symbolizer 
      * @throws FactoryException 
      * @throws TransformException 
+     * @throws RenderException 
      */
-    private void renderBlankTile(Graphics2D graphics, WMTTile tile, MathTransform transform) throws FactoryException, TransformException {
+    private void renderBlankTile(Graphics2D graphics, WMTTile tile) throws FactoryException, TransformException, RenderException {
         
         if (tile == null) {
             return;
         }
         
-        // get the bounds of the tile
-        Envelope bnds = tile.getBounds();
-
-        // convert bounds to necessary viewport projection
-        if (!crsTiles.equals(crsMap)) {
-            //MathTransform transform = CRS.findMathTransform(tile.getExtent().getCoordinateReferenceSystem(), getContext().getCRS());
-            bnds = JTS.transform(bnds, transform);
-        }
+        // get the bounds of the tile and convert to necessary viewport projection
+        Envelope bnds = getProjectedEnvelope(tile.getExtent(), crsMap, transformTileCrsToMap);
         
         // determine screen coordinates of tiles
         Point upperLeft = getContext().worldToPixel(new Coordinate(bnds.getMinX(), bnds.getMinY()));
@@ -534,6 +479,77 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             WmsPlugin.log("Error Rendering Blank tile. Painting Tile", t); //$NON-NLS-1$
         }
     } 
+    
+    /**
+     * Looks for all needed transformations.
+     *
+     * @throws RenderException
+     */
+    private void findTransformation() throws RenderException {
+        // Transformation: MapCrs -> TileCrs (mostly WGS_84) 
+        transformMapToTileCrs = getTransformation(crsMap, crsTiles);
+        
+        // Transformation: TileCrs (mostly WGS_84) -> MapCrs (needed for the blank tiles)
+        transformTileCrsToMap = getTransformation(crsTiles, crsMap);
+        
+        // Transformation: TileCrs (mostly WGS_84) -> TilesProjectedCrs (mostly Google's Mercator)
+        transformTileCrsToTilesProjected = getTransformation(crsTiles, crsTilesProjected);
+                    
+        // Transformation: TilesProjectedCrs (mostly Google's Mercator) -> MapCrs
+        transformTilesProjectedToMap = getTransformation(crsTilesProjected, crsMap);
+    }
+    
+    /**
+     * Returns the transformation to convert between these two CRS's.
+     *
+     * @param fromCRS
+     * @param toCRS
+     * @return
+     * @throws RenderException
+     */
+    private MathTransform getTransformation(CoordinateReferenceSystem fromCRS, 
+            CoordinateReferenceSystem toCRS) throws RenderException {
+        if(!fromCRS.equals(toCRS)) {
+            try {
+                return CRS.findMathTransform(fromCRS, toCRS);
+            } catch(Exception exc) {
+                // no transformation possible
+                throw new RenderException("reprojecting error");
+                //todo: nice error message
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Returns the envelope in the requested CRS, if necessary using the
+     * transformation.
+     *
+     * @param envelope
+     * @param destinationCRS
+     * @param transformation
+     * @return
+     * @throws RenderException
+     */
+    private ReferencedEnvelope getProjectedEnvelope(ReferencedEnvelope envelope, 
+            CoordinateReferenceSystem destinationCRS, 
+            MathTransform transformation) throws RenderException {
+        CoordinateReferenceSystem sourceCRS = envelope.getCoordinateReferenceSystem();
+        
+        if(sourceCRS.equals(destinationCRS)) {
+            // no need to reproject
+            return envelope;
+        } else {         
+            // Reproject envelope
+            try {
+                return new ReferencedEnvelope(JTS.transform(envelope, transformation), destinationCRS);
+            } catch(Exception exc) {
+                throw new RenderException("transformation error");
+              //todo: nice error message
+            }
+        }
+    }
     
     /**
      * TileListener implementation for rendering new tiles that are ready
