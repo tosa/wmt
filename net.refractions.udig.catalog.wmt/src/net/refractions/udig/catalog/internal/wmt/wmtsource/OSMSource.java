@@ -26,49 +26,31 @@ public abstract class OSMSource extends WMTSource {
      * A list that represents a mapping between OSM zoom-levels and map scale.
      * <pre>
      * see: 
-     * http://wiki.openstreetmap.org/wiki/FAQ#What_is_the_map_scale_for_a_particular_zoom_level_of_the_map.3F
-     * 
-     * Zoom level    Scale as representative fraction    Meters per pixel
-     * 18  1 : 1,693   0.597164
-     * 17  1 : 3,385   1.194329
-     * 16  1 : 6,771   2.388657
-     * 15  1 : 14,000  4.777314
-     * 14  1 : 27,000  9.554629
-     * 13  1 : 54,000  19.109257
-     * 12  1 : 108,000     38.218514
-     * 11  1 : 217,000     76.437028
-     * 10  1 : 433,000     152.874057
-     * 9   1 : 867,000     305.748113
-     * 8   1 : 2 million   611.496226
-     * 7   1 : 3 million   1222.992453
-     * 6   1 : 7 million   2445.984905
-     * 5   1 : 14 million  4891.969810
-     * 4   1 : 28 million  9783.939621
-     * 3   1 : 55 million  19567.879241
-     * 2   1 : 111 million     39135.758482  
+     * http://blogs.esri.com/Support/blogs/mappingcenter/archive/2009/03/19/How-can-you-tell-what-map-scales-are-shown-for-online-maps_3F00_.aspx
      * </pre>
      */
     public static double[] scaleList = {
         Double.NaN,
-        Double.NaN,
-        111000000,
-        55000000,
-        28000000,
-        14000000,
-        7000000,
-        3000000,
-        2000000,
-        867000,
-        433000,
-        217000,
-        108000,
-        54000,
-        27000,
-        14000,
-        6771,
-        3385,
-        1693                
+        Double.NaN,    
+        147914381,
+        73957190,
+        36978595,
+        18489297,
+        9244648,
+        4622324,
+        2311162,
+        1155581,
+        577790,
+        288895,
+        144447,
+        72223,
+        36111,
+        18055,
+        9027,
+        4513,
+        2256
     };
+
     
     /**
      * Returns the mapping list
