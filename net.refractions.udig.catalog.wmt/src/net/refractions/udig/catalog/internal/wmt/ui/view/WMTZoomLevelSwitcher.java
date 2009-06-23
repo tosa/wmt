@@ -1,17 +1,10 @@
 package net.refractions.udig.catalog.internal.wmt.ui.view;
 
-import java.awt.Color;
-import java.awt.Frame;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
 
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
-import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
+import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.project.ILayer;
 import net.refractions.udig.project.IMapCompositionListener;
@@ -19,19 +12,18 @@ import net.refractions.udig.project.MapCompositionEvent;
 import net.refractions.udig.project.internal.commands.SetScaleCommand;
 import net.refractions.udig.project.render.IViewportModelListener;
 import net.refractions.udig.project.render.ViewportModelEvent;
-import net.refractions.udig.project.render.ViewportModelEvent.EventType;
 import net.refractions.udig.project.ui.ApplicationGIS;
 
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ComboViewer;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.awt.SWT_AWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
@@ -41,18 +33,23 @@ import org.eclipse.ui.part.ViewPart;
 
 public class WMTZoomLevelSwitcher extends ViewPart {
 
-    private ComboViewer comboViewer;
+    private ComboViewer cvLayers;
     private List<ILayer> layerList;
-    private JSlider zoomLevelSlider;
+    private ComboViewer cvZoomLevels;
+    private ISelectionChangedListener listenerZoomLevel;
+    
     private Button btnZoomOut;
     private Button btnZoomIn;
+    
+    private double[] scales;
+    private Integer[] zoomLevels;
 
     public WMTZoomLevelSwitcher() {
         super();
     }
     
     @Override
-    public void createPartControl(Composite parent) {
+    public void createPartControl(final Composite parent) {
         Composite composite = new Composite(parent, SWT.NONE);   
         composite.setLayout(new RowLayout(SWT.HORIZONTAL));
                       
@@ -60,10 +57,10 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         lblUseZoomLevel.setText("Layer: ");
         
         //region Layer ComboBox
-        comboViewer = new ComboViewer(composite, SWT.READ_ONLY);
+        cvLayers = new ComboViewer(composite, SWT.READ_ONLY);
                
-        comboViewer.setContentProvider(new ArrayContentProvider());
-        comboViewer.setLabelProvider(new LabelProvider() {
+        cvLayers.setContentProvider(new ArrayContentProvider());
+        cvLayers.setLabelProvider(new LabelProvider() {
             @Override
             public String getText(Object element) {
                 if (element instanceof ILayer) {
@@ -73,55 +70,38 @@ public class WMTZoomLevelSwitcher extends ViewPart {
                 }
             }            
         });
-        //endregion
         
-        //region Zoom-Level Slider
-        // create Swing Slider 
-        zoomLevelSlider = new JSlider(JSlider.HORIZONTAL, 2, 18, 11);
+        cvLayers.addSelectionChangedListener(new ISelectionChangedListener() {
 
-        zoomLevelSlider.setMajorTickSpacing(5);
-        zoomLevelSlider.setMinorTickSpacing(1);
-        
-        Hashtable labelTable = new Hashtable();
-        labelTable.put( new Integer( 2 ), new JLabel("-") );
-        labelTable.put( new Integer( 18), new JLabel("+") );
-        zoomLevelSlider.setLabelTable(labelTable);
-
-        zoomLevelSlider.setPaintTicks(true);
-        zoomLevelSlider.setPaintLabels(true);
-        zoomLevelSlider.setSnapToTicks(true);
-        zoomLevelSlider.setBorder(BorderFactory.createEmptyBorder());
-        
-        // change background color
-        org.eclipse.swt.graphics.Color swtColor = parent.getBackground();
-        zoomLevelSlider.setBackground(new Color(swtColor.getRed(), swtColor.getGreen(), swtColor.getBlue()));
-        
-        // create SWT/AWT bridge
-        Composite compositeSlider = new Composite(composite, SWT.EMBEDDED | SWT.NO_BACKGROUND);
-        compositeSlider.setLayoutData(new RowData(150, 50));
-         
-        compositeSlider.setLayout(new FillLayout());
-        
-        Frame awtFrame = SWT_AWT.new_Frame(compositeSlider);
-        awtFrame.add(zoomLevelSlider);
-        
-        zoomLevelSlider.addChangeListener(new ChangeListener() {
-
-            public void stateChanged(ChangeEvent e) {
-                JSlider source = (JSlider)e.getSource();
-                if (!source.getValueIsAdjusting()) {
-
-                    System.out.println("Zoom to " + source.getValue());
-                }                
+            public void selectionChanged( SelectionChangedEvent event ) {
+                System.out.println("Layer Selection changed");
+                updateZoomLevels();
+                updateGUIFromScale();                    
             }
             
         });
+        //endregion
+        
+        //region Zoom-Level ComboBox
+        cvZoomLevels = new ComboViewer(composite, SWT.READ_ONLY);
+               
+        cvZoomLevels.setContentProvider(new ArrayContentProvider());
+        cvZoomLevels.setLabelProvider(new LabelProvider());
         //endregion
         
         //region Zoom-In/Zoom-Out Buttons
         btnZoomOut = new Button(composite, SWT.PUSH);
         btnZoomOut.setText("-"); //todo: replace with icon
         btnZoomOut.setLayoutData(new RowData(32, 32));
+        
+        btnZoomOut.addSelectionListener(new SelectionListener() {
+
+            public void widgetSelected( SelectionEvent e ) {
+                zoomOut();
+            }
+
+            public void widgetDefaultSelected( SelectionEvent e ) {}
+        });
         
         btnZoomIn = new Button(composite, SWT.PUSH);
         btnZoomIn.setText("+");
@@ -130,21 +110,32 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         btnZoomIn.addSelectionListener(new SelectionListener() {
 
             public void widgetSelected( SelectionEvent e ) {
-                ApplicationGIS.getActiveMap().sendCommandASync(new SetScaleCommand(1000000));
-
+                zoomIn();
             }
 
-            public void widgetDefaultSelected( SelectionEvent e ) {
-            }
-            
+            public void widgetDefaultSelected( SelectionEvent e ) {}            
         });
         //endregion
         
-        // Setup listener
+        //region Setup listeners
+        listenerZoomLevel = new ISelectionChangedListener() {
+            public void selectionChanged( SelectionChangedEvent event ) {
+                System.out.println("Zoom-Level Selection changed");
+                zoomToZoomLevel(getSelectedZoomLevel());
+            }
+            
+        };
+        
+        cvZoomLevels.addSelectionChangedListener(listenerZoomLevel);
+        
         ApplicationGIS.getActiveMap().addMapCompositionListener(new IMapCompositionListener(){
-
             public void changed(MapCompositionEvent event) {
                 System.out.println("Layer(s) added/removed/replaced");
+                parent.getDisplay().syncExec(new Runnable() {
+                    public void run(){
+                        updateGUI();
+                    }
+                });
                 // http://udig.refractions.net/files/docs/api-udig/net.refractions.udig.project/net/refractions/udig/project/MapCompositionEvent.EventType.html
                 // http://udig.refractions.net/files/docs/api-udig/net.refractions.udig.project/net/refractions/udig/project/MapCompositionEvent.html
             }
@@ -153,20 +144,27 @@ public class WMTZoomLevelSwitcher extends ViewPart {
        
         
         ApplicationGIS.getActiveMap().getViewportModel().addViewportModelListener(new IViewportModelListener() {
-
             public void changed(ViewportModelEvent event) {
-                if (event.getType() == EventType.BOUNDS) {
-                    // only when the scale changes
-                    System.out.println("bounds changed");
-                    // todo: update slider
-                }
+                System.out.println("changed(ViewportModelEvent event) " + event.getOldValue() + " " + event.getNewValue());
+                // when the scale changes, update the zoom-level ComboBox  
+                parent.getDisplay().syncExec(new Runnable() {
+                    public void run(){
+                        updateGUIFromScale();
+                    }
+                });
             }
         });
-
-        updateLayerList();
+        //endregion
         
-        //ApplicationGIS.
+        updateGUI();
+        
         parent.pack();
+    }
+    
+    private void updateGUI() {
+        updateLayerList();
+        updateZoomLevels();
+        updateGUIFromScale();        
     }
     
     private void updateLayerList() {
@@ -189,14 +187,109 @@ public class WMTZoomLevelSwitcher extends ViewPart {
             }            
         }
         
-        comboViewer.setInput(layerList);
+        cvLayers.setInput(layerList);
         setSelectedLayer(selectedLayer);
         
         enableComponents(!layerList.isEmpty());
     }
 
+    private void updateZoomLevels() {
+        WMTSource wmtSource = getWMTSourceOfSelectedLayer();
+        
+        if (wmtSource == null) {
+            cvZoomLevels.setInput(null);
+        } else {
+            scales = wmtSource.getScaleList();
+
+            int minZoomLevel = wmtSource.getMinZoomLevel();
+            int maxZoomLevel = wmtSource.getMaxZoomLevel();
+            
+            generateZoomLevels(minZoomLevel, maxZoomLevel);
+            
+            cvZoomLevels.setInput(zoomLevels);
+        }
+    }
+    
+    private void updateGUIFromScale() {
+        WMTSource wmtSource = getWMTSourceOfSelectedLayer();
+        
+        if (wmtSource == null) {
+            // todo: ?
+        } else {            
+            double scale = ApplicationGIS.getActiveMap().getViewportModel().getScaleDenominator();
+            
+            // get the zoom-level for this scale
+            int zoomLevel = wmtSource.getZoomLevelFromMapScale(scale, WMTSource.SCALE_FACTOR);
+            
+            setSelectedZoomLevel(zoomLevel);
+            updateZoomButtons(zoomLevel);
+        }        
+    }
+    
+    private void setSelectedZoomLevel(int zoomLevel) {
+        
+        List<Integer> selectedZoomLevels = new ArrayList<Integer>(1);
+        selectedZoomLevels.add(zoomLevel);      
+        ISelection selection = new StructuredSelection(selectedZoomLevels);
+
+        cvZoomLevels.removeSelectionChangedListener(listenerZoomLevel);
+        cvZoomLevels.setSelection(selection);  
+        cvZoomLevels.addSelectionChangedListener(listenerZoomLevel);
+    }
+    
+    private int getSelectedZoomLevel() {
+        StructuredSelection selection = (StructuredSelection) cvZoomLevels.getSelection();
+        
+        if (selection.isEmpty()) {
+            return zoomLevels[0];
+        } else {
+            return (Integer) selection.getFirstElement();
+        }
+    }
+    
+    private void updateZoomButtons(int zoomLevel) {
+        boolean zoomInEnabled = true;
+        boolean zoomOutEnabled = true;
+        
+        if (zoomLevel <= zoomLevels[0]) {
+            zoomOutEnabled = false;
+        } else if (zoomLevel >= zoomLevels[zoomLevels.length-1]) {
+            zoomInEnabled = false;
+        }
+        
+        btnZoomIn.setEnabled(zoomInEnabled);
+        btnZoomOut.setEnabled(zoomOutEnabled);
+    }
+    
+    private void generateZoomLevels(int minZoomLevel, int maxZoomLevel) {
+        int length = maxZoomLevel - minZoomLevel + 1;
+        zoomLevels = new Integer[length];
+        
+        int zoomLevel = minZoomLevel;
+        for (int i = 0; i < length; i++) {
+            zoomLevels[i] = zoomLevel++;
+        }
+    }
+    
+    private WMTSource getWMTSourceOfSelectedLayer() {
+        ILayer layer = getSelectedLayer();
+        
+        if (layer == null) return null;
+        
+        IGeoResource resource = layer.findGeoResource(WMTSource.class); 
+        if (resource == null) return null;
+        
+        try {
+            WMTSource wmtSource = resource.resolve(WMTSource.class, null);
+            
+            return wmtSource;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+    
     private ILayer getSelectedLayer() {
-        StructuredSelection selection = (StructuredSelection) comboViewer.getSelection();
+        StructuredSelection selection = (StructuredSelection) cvLayers.getSelection();
         
         if (selection.isEmpty()) {
             return null;
@@ -206,7 +299,7 @@ public class WMTZoomLevelSwitcher extends ViewPart {
     }
     
     private void setSelectedLayer(ILayer layer) {
-        if (layer == null) {
+        if (layer == null || !layerList.contains(layer)) {
             // try to get the first layer
             if (layerList.isEmpty()) {
                 // no layer there to select
@@ -217,24 +310,47 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         } 
         
         // set the layer selected
-        List<ILayer> selectedList = new ArrayList<ILayer>(1);
-        selectedList.add(layer);      
-        ISelection selection = new StructuredSelection(selectedList);
+        List<ILayer> selectedLayers = new ArrayList<ILayer>(1);
+        selectedLayers.add(layer);      
+        ISelection selection = new StructuredSelection(selectedLayers);
       
-        comboViewer.setSelection(selection);
+        cvLayers.setSelection(selection);
     }
     
     private void enableComponents(boolean enabled) {
-        comboViewer.getCombo().setEnabled(enabled);
-        zoomLevelSlider.setEnabled(enabled);
+        cvLayers.getCombo().setEnabled(enabled);
+        cvZoomLevels.getCombo().setEnabled(enabled);
         btnZoomIn.setEnabled(enabled);
         btnZoomOut.setEnabled(enabled);        
     }
     
-    @Override
-    public void setFocus() {
+    private void zoomIn() {
+        int zoomLevel = getSelectedZoomLevel();
         
+        if (zoomLevel < zoomLevels[zoomLevels.length-1]){
+            zoomToZoomLevel(zoomLevel+1);
+        }
     }
+    
+    private void zoomOut() {
+        int zoomLevel = getSelectedZoomLevel();
+        
+        if (zoomLevel > zoomLevels[0]){
+            zoomToZoomLevel(zoomLevel-1);
+        }
+    }
+    
+    private void zoomToZoomLevel(int zoomLevel) {
+        zoomToScale(scales[zoomLevel]);
+    }
+    
+    private void zoomToScale(double scale) {
+        ApplicationGIS.getActiveMap().sendCommandASync(new SetScaleCommand(scale));
+    }
+    
+    
+    @Override
+    public void setFocus() {}
 
 
 }
