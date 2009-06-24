@@ -101,15 +101,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
      */
     private BlockingQueue<Tile> tilesToDraw_queue = new PriorityBlockingQueue<Tile>();
     
-    private CoordinateReferenceSystem crsMap;
-    private CoordinateReferenceSystem crsTiles;
-    private CoordinateReferenceSystem crsTilesProjected;
-    
-    MathTransform transformMapToTileCrs = null;
-    MathTransform transformTileCrsToMap = null;
-    MathTransform transformTileCrsToTilesProjected = null;
-    MathTransform transformTilesProjectedToMap = null;
-    
+        
     /**
      * Construct a new BasicWMTRenderer
      */
@@ -170,13 +162,23 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             }
             
             //region CRS and transformations
-            // Get several CRS's
-            crsMap = mapExtent.getCoordinateReferenceSystem();
-            crsTiles = wmtSource.getTileCrs(); // the CRS used for the tile cutting 
-            crsTilesProjected = wmtSource.getProjectedTileCrs(); // the CRS the tiles were projected in
+            // Get several CRS's            
+            CoordinateReferenceSystem crsMap = mapExtent.getCoordinateReferenceSystem();
+            CoordinateReferenceSystem crsTiles = wmtSource.getTileCrs(); // the CRS used for the tile cutting 
+            CoordinateReferenceSystem crsTilesProjected = wmtSource.getProjectedTileCrs(); // the CRS the tiles were projected in
                        
-            // get transformations for reprojections between the CRS's
-            findTransformation();            
+            //region get transformations for reprojections between the CRS's  
+            // Transformation: MapCrs -> TileCrs (mostly WGS_84) 
+            MathTransform transformMapToTileCrs = getTransformation(crsMap, crsTiles);
+            
+            // Transformation: TileCrs (mostly WGS_84) -> MapCrs (needed for the blank tiles)
+            MathTransform transformTileCrsToMap = getTransformation(crsTiles, crsMap);
+            
+            // Transformation: TileCrs (mostly WGS_84) -> TilesProjectedCrs (mostly Google's Mercator)
+            MathTransform transformTileCrsToTilesProjected = getTransformation(crsTiles, crsTilesProjected);
+                        
+            // Transformation: TilesProjectedCrs (mostly Google's Mercator) -> MapCrs
+            MathTransform transformTilesProjectedToMap = getTransformation(crsTilesProjected, crsMap);           
             //endregion
             
             // Get the mapExtent in the tiles CRS
@@ -253,14 +255,15 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                 }
                 Tile tile = tiles.get(key);
                 if (tile != null && tile.getBufferedImage() != null && tile.getTileState() != WMSTile.INERROR) {
-                    renderTile(destination, (WMTTile) tile, style);
+                    renderTile(destination, (WMTTile) tile, style, crsMap, crsTilesProjected, 
+                            transformTileCrsToTilesProjected, transformTilesProjectedToMap);
                     renderedTiles.add(key);
                     monitor.worked(tileWorth);  // inc the monitor work by 1 tile
                 }
                 else {
                     // set the tile blank (removing any previous content) and add it
                     // to be drawn later
-                    renderBlankTile(destination, (WMTTile) tile);
+                    renderBlankTile(destination, (WMTTile) tile, crsMap, transformTileCrsToMap);
                     notRenderedTiles.add(key);
                 }
             }      
@@ -344,7 +347,8 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                             //viewbounds.intersects(tile.getBounds()) && 
                             !renderedTiles.contains(tile.getId())) {
     
-                        renderTile(destination, (WMTTile) tile, style);
+                        renderTile(destination, (WMTTile) tile, style, crsMap, crsTilesProjected, 
+                                transformTileCrsToTilesProjected, transformTilesProjectedToMap);
                         renderedTiles.add(tile.getId());
                         monitor.worked(tileWorth);  // inc the monitor work by 1 tile
                         setState(RENDERING); // tell renderer new data is ready                
@@ -382,8 +386,10 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
      * @throws TransformException
      * @throws RenderException 
      */
-    private void renderTile(Graphics2D graphics, WMTTile tile, 
-            RasterSymbolizer style) throws FactoryException, TransformException, RenderException {
+    private void renderTile(Graphics2D graphics, WMTTile tile, RasterSymbolizer style,
+            CoordinateReferenceSystem crsMap, CoordinateReferenceSystem crsTilesProjected,
+            MathTransform transformTileCrsToTilesProjected, MathTransform transformTilesProjectedToMap) 
+            throws FactoryException, TransformException, RenderException {
         
         if (tile == null || tile.getBufferedImage() == null) {
             return;
@@ -418,7 +424,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         //render
         try{
             GridCoverageRenderer paint = new GridCoverageRenderer(getContext().getCRS(), bnds, tileSize);
-           
+            
             paint.paint(graphics, coverage, style);
            
             if( TESTING ){
@@ -446,7 +452,9 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
      * @throws TransformException 
      * @throws RenderException 
      */
-    private void renderBlankTile(Graphics2D graphics, WMTTile tile) throws FactoryException, TransformException, RenderException {
+    private void renderBlankTile(Graphics2D graphics, WMTTile tile,
+            CoordinateReferenceSystem crsMap, MathTransform transformTileCrsToMap) 
+    throws FactoryException, TransformException, RenderException {
         
         if (tile == null) {
             return;
@@ -479,25 +487,6 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             WmsPlugin.log("Error Rendering Blank tile. Painting Tile", t); //$NON-NLS-1$
         }
     } 
-    
-    /**
-     * Looks for all needed transformations.
-     *
-     * @throws RenderException
-     */
-    private void findTransformation() throws RenderException {
-        // Transformation: MapCrs -> TileCrs (mostly WGS_84) 
-        transformMapToTileCrs = getTransformation(crsMap, crsTiles);
-        
-        // Transformation: TileCrs (mostly WGS_84) -> MapCrs (needed for the blank tiles)
-        transformTileCrsToMap = getTransformation(crsTiles, crsMap);
-        
-        // Transformation: TileCrs (mostly WGS_84) -> TilesProjectedCrs (mostly Google's Mercator)
-        transformTileCrsToTilesProjected = getTransformation(crsTiles, crsTilesProjected);
-                    
-        // Transformation: TilesProjectedCrs (mostly Google's Mercator) -> MapCrs
-        transformTilesProjectedToMap = getTransformation(crsTilesProjected, crsMap);
-    }
     
     /**
      * Returns the transformation to convert between these two CRS's.
