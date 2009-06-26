@@ -35,6 +35,7 @@ import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTileImageReadWriter;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTileSetWrapper;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
+import net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerProperties;
 import net.refractions.udig.catalog.wmsc.server.Tile;
 import net.refractions.udig.catalog.wmsc.server.TileListener;
 import net.refractions.udig.catalog.wmsc.server.TileRange;
@@ -45,6 +46,7 @@ import net.refractions.udig.catalog.wmsc.server.TileSet;
 import net.refractions.udig.catalog.wmsc.server.TileWorkerQueue;
 import net.refractions.udig.catalog.wmsc.server.WMSTile;
 import net.refractions.udig.project.ILayer;
+import net.refractions.udig.project.internal.StyleBlackboard;
 import net.refractions.udig.project.internal.render.impl.RendererImpl;
 import net.refractions.udig.project.render.IMultiLayerRenderer;
 import net.refractions.udig.project.render.RenderException;
@@ -151,6 +153,9 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             // todo: error.. etc
             if (wmtSource == null) return;
             
+            //region Layer properties
+            WMTLayerProperties layerProperties = new WMTLayerProperties((StyleBlackboard) layer.getStyleBlackboard());
+            //endregion
             
             // Get map extent, which should be drawn 
             //todo: difference between getRenderBounds() and context.getViewportModel().getBounds() 
@@ -188,17 +193,17 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             // Scale
             double scale = getContext().getViewportModel().getScaleDenominator();
             System.out.println("Scale: " +  scale + " -  zoom-level: " + wmtSource.getZoomLevelFromMapScale(scale, WMTSource.SCALE_FACTOR) + 
-                    " " + wmtSource.getZoomLevelToUse(scale, WMTSource.SCALE_FACTOR, false));
+                    " " + wmtSource.getZoomLevelToUse(scale, WMTSource.SCALE_FACTOR, false, layerProperties));
             
             //Find tiles
-            Map<String, Tile> tileList = wmtSource.cutExtentIntoTiles(mapExtentProjected, scale, WMTSource.SCALE_FACTOR, false);
+            Map<String, Tile> tileList = wmtSource.cutExtentIntoTiles(mapExtentProjected, scale, WMTSource.SCALE_FACTOR, false, layerProperties);
             
             // check if these are to many tiles
             int tilesCount = tileList.size();
             if (tilesCount > WARNING_TOO_MANY_TILES) {
                 // too many tiles, let's use the recommended zoom-level
                 tileList.clear();
-                tileList = wmtSource.cutExtentIntoTiles(mapExtentProjected, scale, WMTSource.SCALE_FACTOR, true);                
+                tileList = wmtSource.cutExtentIntoTiles(mapExtentProjected, scale, WMTSource.SCALE_FACTOR, true, layerProperties);                
                 
                 // show a warning about this
                 layer.setStatus(ILayer.WARNING);

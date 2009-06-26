@@ -2,6 +2,7 @@ package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
 import java.util.Map;
 
+import net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerProperties;
 import net.refractions.udig.catalog.wmsc.server.Tile;
 
 import org.geotools.geometry.jts.ReferencedEnvelope;
@@ -27,7 +28,8 @@ public class VESource extends WMTSource {
 
     @Override
     public Map<String, Tile> cutExtentIntoTiles( ReferencedEnvelope extent, 
-            double scale, int scaleFactor, boolean recommendedZoomLevel) {
+            double scale, int scaleFactor, boolean recommendedZoomLevel, 
+            WMTLayerProperties layerProperties) {
         throw new NotImplementedException();
     }
 

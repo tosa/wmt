@@ -5,6 +5,7 @@ import java.util.Map;
 
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile;
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName.OSMZoomLevel;
+import net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerProperties;
 import net.refractions.udig.catalog.wmsc.server.Tile;
 
 import org.geotools.geometry.jts.ReferencedEnvelope;
@@ -75,8 +76,10 @@ public abstract class OSMSource extends WMTSource {
      * @param scaleFactor The scale-factor (0-100): scale up or down?
      * @return The list of found tiles.
      */
-    public Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale, int scaleFactor, boolean recommendedZoomLevel) {
-        OSMZoomLevel zoomLevel = new OSMZoomLevel(getZoomLevelToUse(scale, scaleFactor, recommendedZoomLevel));
+    public Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale, 
+            int scaleFactor, boolean recommendedZoomLevel, WMTLayerProperties layerProperties) {
+        OSMZoomLevel zoomLevel = new OSMZoomLevel(getZoomLevelToUse(scale, 
+                scaleFactor, recommendedZoomLevel, layerProperties));
         long maxNumberOfTiles = ((long) zoomLevel.getMaxTileNumber()) * ((long) zoomLevel.getMaxTileNumber());
                 
         Map<String, Tile> tileList = new HashMap<String, Tile>();

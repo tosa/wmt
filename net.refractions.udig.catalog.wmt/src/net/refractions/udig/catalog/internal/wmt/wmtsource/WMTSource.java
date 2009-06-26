@@ -9,6 +9,7 @@ import java.util.Map;
 
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
+import net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerProperties;
 import net.refractions.udig.catalog.wmsc.server.Tile;
 import net.refractions.udig.core.internal.CorePlugin;
 
@@ -256,26 +257,24 @@ public abstract class WMTSource {
      * @param useRecommended
      * @return
      */
-    public int getZoomLevelToUse(double scale, int scaleFactor, boolean useRecommended) {
+    public int getZoomLevelToUse(double scale, int scaleFactor, boolean useRecommended,
+            WMTLayerProperties layerProperties) {
         if (useRecommended) {
             return getZoomLevelFromMapScale(scale, scaleFactor);            
         }
         
         // try to load the property values
-        boolean selectionAutomatic = false;
+        boolean selectionAutomatic = true;
         int zoomLevel = -1;
         
-        try {
-            Map<String, Serializable> properties = getWmtService().getPersistentProperties();
-            
-            selectionAutomatic = (Boolean) properties.get(WMTService.KEY_PROPERTY_ZOOM_LEVEL_SELECTION_AUTOMATIC);
-            zoomLevel = (Integer) properties.get(WMTService.KEY_PROPERTY_ZOOM_LEVEL_VALUE);
-        } catch(Exception exc) {
-            // cast failed or properties do not contain the keys
+        if (layerProperties.load()) {            
+            selectionAutomatic = layerProperties.getSelectionAutomatic();
+            zoomLevel = layerProperties.getZoomLevel();
+        } else {
             selectionAutomatic = true;
-            zoomLevel = -1;
         }
         
+        // check if the zoom-level is valid
         if (!selectionAutomatic && 
                 ((zoomLevel >= getMinZoomLevel()) && (zoomLevel <= getMaxZoomLevel()))) {
             // the zoom-level from the properties is valid, so let's take it
@@ -332,7 +331,8 @@ public abstract class WMTSource {
      * @return The list of found tiles.
      */
     public abstract Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, 
-            double scale, int scaleFactor, boolean recommendedZoomLevel);
+            double scale, int scaleFactor, boolean recommendedZoomLevel,
+            WMTLayerProperties layerProperties);
         //endregion
     
     @Override

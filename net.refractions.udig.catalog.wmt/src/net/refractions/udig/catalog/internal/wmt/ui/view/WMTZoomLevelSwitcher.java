@@ -7,6 +7,7 @@ import java.util.List;
 import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.project.ILayer;
+import net.refractions.udig.project.IMap;
 import net.refractions.udig.project.IMapCompositionListener;
 import net.refractions.udig.project.MapCompositionEvent;
 import net.refractions.udig.project.internal.commands.SetScaleCommand;
@@ -30,13 +31,20 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.part.ViewPart;
+import org.eclipse.emf.common.util.URI;
 
 public class WMTZoomLevelSwitcher extends ViewPart {
 
     private ComboViewer cvLayers;
     private List<ILayer> layerList;
+    private URI mapId = null;
     private ComboViewer cvZoomLevels;
+    
     private ISelectionChangedListener listenerZoomLevel;
+    private IMapCompositionListener listenerMap;
+    private IViewportModelListener listenerViewport;
+    
+    private Composite parentControl;
     
     private Button btnZoomOut;
     private Button btnZoomIn;
@@ -44,12 +52,71 @@ public class WMTZoomLevelSwitcher extends ViewPart {
     private double[] scales;
     private Integer[] zoomLevels;
 
+    private static WMTZoomLevelSwitcher instance = null;
+    public static WMTZoomLevelSwitcher getInstance() {
+        return WMTZoomLevelSwitcher.instance;
+    }
+    
     public WMTZoomLevelSwitcher() {
         super();
+        
+        WMTZoomLevelSwitcher.instance = this;
+        
+        listenerMap = new IMapCompositionListener(){
+            public void changed(MapCompositionEvent event) {
+                System.out.println("Layer(s) added/removed/replaced");
+                
+                if (parentControl == null) return;
+                parentControl.getDisplay().syncExec(new Runnable() {
+                    public void run(){
+                        updateGUI();
+                    }
+                });
+                // http://udig.refractions.net/files/docs/api-udig/net.refractions.udig.project/net/refractions/udig/project/MapCompositionEvent.EventType.html
+                // http://udig.refractions.net/files/docs/api-udig/net.refractions.udig.project/net/refractions/udig/project/MapCompositionEvent.html
+            }
+            
+        };
+        
+        listenerViewport = new IViewportModelListener() {
+            public void changed(ViewportModelEvent event) {
+                System.out.println("changed(ViewportModelEvent event) " + event.getOldValue() + " " + event.getNewValue());
+                
+                if (parentControl == null) return;
+                
+                if (layerUpdateRequired()) {
+                    listenerMap.changed(null);
+                    return;
+                }
+                
+                // when the scale changes, update the zoom-level ComboBox  
+                parentControl.getDisplay().syncExec(new Runnable() {
+                    public void run(){
+                        updateGUIFromScale();
+                    }
+                });
+            }
+        };
+    }
+    
+    public void setUpMapListeners(IMap map) {
+        // assure that the listener is only one in the list
+        map.removeMapCompositionListener(listenerMap);        
+        map.addMapCompositionListener(listenerMap);
+       
+        map.getViewportModel().removeViewportModelListener(listenerViewport);
+        map.getViewportModel().addViewportModelListener(listenerViewport);
+        
+        if (parentControl != null) {
+            updateGUI();
+        }
     }
     
     @Override
     public void createPartControl(final Composite parent) {
+        System.out.println("WMTZoomLevelSwitcher.createPartControl");
+        parentControl = parent;
+        
         Composite composite = new Composite(parent, SWT.NONE);   
         composite.setLayout(new RowLayout(SWT.HORIZONTAL));
                       
@@ -128,43 +195,16 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         
         cvZoomLevels.addSelectionChangedListener(listenerZoomLevel);
         
-        ApplicationGIS.getActiveMap().addMapCompositionListener(new IMapCompositionListener(){
-            public void changed(MapCompositionEvent event) {
-                System.out.println("Layer(s) added/removed/replaced");
-                parent.getDisplay().syncExec(new Runnable() {
-                    public void run(){
-                        updateGUI();
-                    }
-                });
-                // http://udig.refractions.net/files/docs/api-udig/net.refractions.udig.project/net/refractions/udig/project/MapCompositionEvent.EventType.html
-                // http://udig.refractions.net/files/docs/api-udig/net.refractions.udig.project/net/refractions/udig/project/MapCompositionEvent.html
-            }
-            
-        });
-       
-        
-        ApplicationGIS.getActiveMap().getViewportModel().addViewportModelListener(new IViewportModelListener() {
-            public void changed(ViewportModelEvent event) {
-                System.out.println("changed(ViewportModelEvent event) " + event.getOldValue() + " " + event.getNewValue());
-                // when the scale changes, update the zoom-level ComboBox  
-                parent.getDisplay().syncExec(new Runnable() {
-                    public void run(){
-                        updateGUIFromScale();
-                    }
-                });
-            }
-        });
+        setUpMapListeners(ApplicationGIS.getActiveMap());
         //endregion
-        
-        updateGUI();
-        
-        parent.pack();
     }
     
     private void updateGUI() {
         updateLayerList();
         updateZoomLevels();
-        updateGUIFromScale();        
+        updateGUIFromScale(); 
+        
+        parentControl.pack();       
     }
     
     private void updateLayerList() {
@@ -191,6 +231,14 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         setSelectedLayer(selectedLayer);
         
         enableComponents(!layerList.isEmpty());
+        
+        // remember to which map these layers belong to
+        mapId = ApplicationGIS.getActiveMap().getID();
+    }
+    
+    private boolean layerUpdateRequired(){
+        return !((mapId != null) && 
+                mapId.equals(ApplicationGIS.getActiveMap().getID()));
     }
 
     private void updateZoomLevels() {

@@ -84,6 +84,8 @@ public class TileRangeOnDisk extends AbstractTileRange {
 	}
 	
 	/**
+	 * This constructor allows you to use your own
+	 * implementation of TileImageReadWriter.
 	 * 
 	 * @param server
 	 * @param tileset
@@ -105,8 +107,7 @@ public class TileRangeOnDisk extends AbstractTileRange {
         else {
             this.writeTileWorkQueue = writeTileWorkQueue;
         }       
-        
-        // load the disk cache location from plugin preferences
+                
         tileReadWriter = tileImageReadWriter;
         
         // the super's constructor will have built the list of tiles not loaded, so

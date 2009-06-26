@@ -26,7 +26,7 @@
   <extension
          point="org.eclipse.ui.propertyPages">
       <page
-            class="net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerProperties"
+            class="net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerPropertyPage"
             id="net.refractions.udig.catalog.internal.wmt.ui.properties.wmtlayerproperties"
             name="%propertiesLayer.name"
             objectClass="net.refractions.udig.project.ILayer">
@@ -50,6 +50,14 @@
     </propertyTester>
   </extension>
   <extension
+         point="net.refractions.udig.project.style">
+      <style
+            class="net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerStyleContent"
+            id="net.refractions.udig.catalog.internal.wmt.ui.properties.dialogSettings"
+            name="WMT Style Properties">
+      </style>
+  </extension>  
+  <extension
         point="org.eclipse.ui.views">
      <view
            allowMultiple="false"
@@ -59,5 +67,12 @@
            name="viewZoomLevelSwitcher"
            restorable="true">
      </view>
-  </extension>   
+  </extension>
+  <extension
+        point="net.refractions.udig.project.mapInterceptor">
+        <mapOpening
+              class="net.refractions.udig.catalog.internal.wmt.ui.view.WMTOpenMapListener"
+              id="net.refractions.udig.catalog.wmt.mapOpens">
+        </mapOpening> 
+  </extension>    
 </plugin>
