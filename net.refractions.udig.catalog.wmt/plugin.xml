@@ -64,15 +64,8 @@
            class="net.refractions.udig.catalog.internal.wmt.ui.view.WMTZoomLevelSwitcher"
            icon="icons/etool16/wms_wiz.gif"
            id="net.refractions.udig.catalog.wmt.viewZoomLevelSwitcher"
-           name="viewZoomLevelSwitcher"
+           name="%zoomLevelSwitcher.name"
            restorable="true">
      </view>
-  </extension>
-  <extension
-        point="net.refractions.udig.project.mapInterceptor">
-        <mapOpening
-              class="net.refractions.udig.catalog.internal.wmt.ui.view.WMTOpenMapListener"
-              id="net.refractions.udig.catalog.wmt.mapOpens">
-        </mapOpening> 
-  </extension>    
+  </extension>   
 </plugin>

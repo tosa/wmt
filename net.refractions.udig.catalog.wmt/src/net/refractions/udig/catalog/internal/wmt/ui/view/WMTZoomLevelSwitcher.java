@@ -10,11 +10,13 @@ import net.refractions.udig.project.ILayer;
 import net.refractions.udig.project.IMap;
 import net.refractions.udig.project.IMapCompositionListener;
 import net.refractions.udig.project.MapCompositionEvent;
+import net.refractions.udig.project.internal.Map;
 import net.refractions.udig.project.internal.commands.SetScaleCommand;
 import net.refractions.udig.project.render.IViewportModelListener;
 import net.refractions.udig.project.render.ViewportModelEvent;
 import net.refractions.udig.project.ui.ApplicationGIS;
 
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ComboViewer;
 import org.eclipse.jface.viewers.ISelection;
@@ -30,19 +32,22 @@ import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.ui.IPartListener;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.part.ViewPart;
-import org.eclipse.emf.common.util.URI;
 
 public class WMTZoomLevelSwitcher extends ViewPart {
 
     private ComboViewer cvLayers;
-    private List<ILayer> layerList;
-    private URI mapId = null;
     private ComboViewer cvZoomLevels;
+    
+    private List<ILayer> layerList;
+    private IMap currentMap = ApplicationGIS.NO_MAP;
     
     private ISelectionChangedListener listenerZoomLevel;
     private IMapCompositionListener listenerMap;
     private IViewportModelListener listenerViewport;
+    private IPartListener listenerMapEditor;
     
     private Composite parentControl;
     
@@ -65,17 +70,16 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         listenerMap = new IMapCompositionListener(){
             public void changed(MapCompositionEvent event) {
                 System.out.println("Layer(s) added/removed/replaced");
+
+                if (parentControl == null)
+                    return;
                 
-                if (parentControl == null) return;
-                parentControl.getDisplay().syncExec(new Runnable() {
-                    public void run(){
-                        updateGUI();
+                parentControl.getDisplay().syncExec(new Runnable(){
+                    public void run() {
+                        updateGUI(ApplicationGIS.getActiveMap());
                     }
                 });
-                // http://udig.refractions.net/files/docs/api-udig/net.refractions.udig.project/net/refractions/udig/project/MapCompositionEvent.EventType.html
-                // http://udig.refractions.net/files/docs/api-udig/net.refractions.udig.project/net/refractions/udig/project/MapCompositionEvent.html
             }
-            
         };
         
         listenerViewport = new IViewportModelListener() {
@@ -97,19 +101,128 @@ public class WMTZoomLevelSwitcher extends ViewPart {
                 });
             }
         };
+        
+        listenerMapEditor = new  IPartListener() {
+            private IWorkbenchPart currentPart;
+
+            /**
+             * @see org.eclipse.ui.IPartListener#partActivated(org.eclipse.ui.IWorkbenchPart)
+             */
+            public void partActivated(IWorkbenchPart part) {
+                System.out.println("partActivated: " + part.getTitle());
+                if (part == currentPart)
+                    return;
+                
+                IMap map = getMapFromPart(part);
+                
+                if (map != null) {
+                    currentPart = part;
+
+                    System.out.println("change map");
+
+                    setUpMapListeners(map);
+                }
+                
+            }
+
+
+            /**
+             * @see org.eclipse.ui.IPartListener#partBroughtToTop(org.eclipse.ui.IWorkbenchPart)
+             */
+            public void partBroughtToTop(IWorkbenchPart part) {
+                System.out.println("partBroughtToTop: " + part.getTitle());
+                partActivated(part);
+            }
+
+            /**
+             * @see org.eclipse.ui.IPartListener#partClosed(org.eclipse.ui.IWorkbenchPart)
+             */
+            public void partClosed(IWorkbenchPart part) {
+                System.out.println("partClosed: " + part.getTitle());
+                
+                if (part == instance) {
+                    removeAllListeners();
+                    currentPart = null;
+                    
+                    return;
+                }
+                
+                if (part != currentPart)
+                    return;
+
+                IMap map = getMapFromPart(part);
+                
+                if(map != null) {
+                    // remove 
+                    removeMapListeners(map, true);
+                }
+                
+                currentPart = null;
+            }
+
+            private IMap getMapFromPart(IWorkbenchPart part) {
+                if (part instanceof IAdaptable) {
+                    IAdaptable adaptable = (IAdaptable) part;
+                    Object obj = adaptable.getAdapter(Map.class);
+
+                    if (obj instanceof Map) {
+                        
+                        return (Map) obj;
+                    }
+                }
+                
+                return null;
+            }
+
+            /**
+             * @see org.eclipse.ui.IPartListener#partDeactivated(org.eclipse.ui.IWorkbenchPart)
+             */
+            public void partDeactivated( IWorkbenchPart part ) {
+                //System.out.println("partDeactivated: " + part.getTitle());
+            }
+
+            /**
+             * @see org.eclipse.ui.IPartListener#partOpened(org.eclipse.ui.IWorkbenchPart)
+             */
+            public void partOpened( IWorkbenchPart part ) {
+                //System.out.println("partOpened: " + part.getTitle());
+                // partActivated(part);
+            }
+            
+        };
     }
     
     public void setUpMapListeners(IMap map) {
-        // assure that the listener is only one in the list
-        map.removeMapCompositionListener(listenerMap);        
-        map.addMapCompositionListener(listenerMap);
-       
-        map.getViewportModel().removeViewportModelListener(listenerViewport);
+        // remove listeners from old map
+        removeMapListeners(currentMap, false);
+        
+        // assure that the listener is only once in the list
+        removeMapListeners(map, false);
+        
+        map.addMapCompositionListener(listenerMap);       
         map.getViewportModel().addViewportModelListener(listenerViewport);
         
-        if (parentControl != null) {
-            updateGUI();
+        updateGUI(map);        
+    }
+    
+    public void removeMapListeners(IMap map, boolean updateGUI) {
+        if (map == null || map == ApplicationGIS.NO_MAP) return;
+        
+        map.removeMapCompositionListener(listenerMap);  
+        map.getViewportModel().removeViewportModelListener(listenerViewport);   
+        
+        if (updateGUI) {            
+            currentMap = ApplicationGIS.NO_MAP;
+            layerList.clear();
+            
+            enableComponents(false);
         }
+    }  
+    
+    public void removeAllListeners() {
+        removeMapListeners(currentMap, false);
+
+        getSite().getWorkbenchWindow().getPartService().removePartListener(listenerMapEditor);        
     }
     
     @Override
@@ -196,18 +309,23 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         cvZoomLevels.addSelectionChangedListener(listenerZoomLevel);
         
         setUpMapListeners(ApplicationGIS.getActiveMap());
+        
+
+        getSite().getWorkbenchWindow().getPartService().addPartListener(listenerMapEditor);
         //endregion
     }
     
-    private void updateGUI() {
-        updateLayerList();
-        updateZoomLevels();
-        updateGUIFromScale(); 
-        
-        parentControl.pack();       
+    private void updateGUI(IMap map) {
+        if (parentControl != null && !parentControl.isDisposed()) {
+            updateLayerList(map);
+            updateZoomLevels();
+            updateGUIFromScale();
+
+            parentControl.pack();
+        }
     }
     
-    private void updateLayerList() {
+    private void updateLayerList(IMap map) {
         if (layerList == null) {
             layerList = new ArrayList<ILayer>();
         } 
@@ -216,15 +334,22 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         ILayer selectedLayer = getSelectedLayer();
         
         layerList.clear();
-        List<ILayer> mapLayers = ApplicationGIS.getActiveMap().getMapLayers();
         
-        // look for layers which have WMTSource as georesource
-        for (ILayer layer : mapLayers) {
-            if ((layer != null) && (layer.findGeoResource(WMTSource.class) != null)) {
-                // valid layer
-                layerList.add(layer);
-                System.out.println("added " + layer.getName() + " " + layer.toString());
-            }            
+        if (map == null || map == ApplicationGIS.NO_MAP) {
+            map = ApplicationGIS.getActiveMap();            
+        }
+        
+        if (map != ApplicationGIS.NO_MAP) {
+            List<ILayer> mapLayers = map.getMapLayers();
+
+            // look for layers which have WMTSource as georesource
+            for( ILayer layer : mapLayers ) {
+                if ((layer != null) && (layer.findGeoResource(WMTSource.class) != null)) {
+                    // valid layer
+                    layerList.add(layer);
+                    System.out.println("added " + layer.getName() + " " + layer.toString());
+                }
+            }
         }
         
         cvLayers.setInput(layerList);
@@ -233,12 +358,12 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         enableComponents(!layerList.isEmpty());
         
         // remember to which map these layers belong to
-        mapId = ApplicationGIS.getActiveMap().getID();
+        this.currentMap = map;
     }
     
     private boolean layerUpdateRequired(){
-        return !((mapId != null) && 
-                mapId.equals(ApplicationGIS.getActiveMap().getID()));
+        return !((currentMap != null) && (currentMap != ApplicationGIS.NO_MAP) &&
+                currentMap.equals(ApplicationGIS.getActiveMap()));
     }
 
     private void updateZoomLevels() {
@@ -261,10 +386,8 @@ public class WMTZoomLevelSwitcher extends ViewPart {
     private void updateGUIFromScale() {
         WMTSource wmtSource = getWMTSourceOfSelectedLayer();
         
-        if (wmtSource == null) {
-            // todo: ?
-        } else {            
-            double scale = ApplicationGIS.getActiveMap().getViewportModel().getScaleDenominator();
+        if (wmtSource != null) {
+            double scale = currentMap.getViewportModel().getScaleDenominator();
             
             // get the zoom-level for this scale
             int zoomLevel = wmtSource.getZoomLevelFromMapScale(scale, WMTSource.SCALE_FACTOR);
