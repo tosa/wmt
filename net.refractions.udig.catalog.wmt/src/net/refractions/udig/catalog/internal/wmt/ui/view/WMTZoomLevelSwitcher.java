@@ -18,6 +18,8 @@ import net.refractions.udig.project.render.ViewportModelEvent;
 import net.refractions.udig.project.ui.ApplicationGIS;
 
 import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ComboViewer;
 import org.eclipse.jface.viewers.ISelection;
@@ -28,6 +30,7 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
@@ -60,6 +63,14 @@ public class WMTZoomLevelSwitcher extends ViewPart {
     
     private double[] scales;
     private Integer[] zoomLevels;
+    
+    // Icons
+    private ImageRegistry imageCache;
+    private static final String ICONS_PATH = "/icons/etool16/"; //$NON-NLS-1$
+    private static final String ICON_ZOOM_IN = "ZOOM_IN"; //$NON-NLS-1$
+    private static final String ICON_ZOOM_IN_PATH = ICONS_PATH + "zoom_in_co.gif"; //$NON-NLS-1$
+    private static final String ICON_ZOOM_OUT = "ZOOM_OUT"; //$NON-NLS-1$
+    private static final String ICON_ZOOM_OUT_PATH = ICONS_PATH + "zoom_out_co.gif"; //$NON-NLS-1$
     
     public WMTZoomLevelSwitcher() {
         super();
@@ -259,11 +270,13 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         cvZoomLevels.setLabelProvider(new LabelProvider());
         //endregion
         
-        //region Zoom-In/Zoom-Out Buttons       
+        //region Zoom-In/Zoom-Out Buttons 
+        // load icons
+        setUpImageCache(parent);
+        
         btnZoomOut = new Button(composite, SWT.PUSH);
-        btnZoomOut.setText("-"); //todo: replace with icon
+        btnZoomOut.setImage(imageCache.get(ICON_ZOOM_OUT));
         btnZoomOut.setToolTipText(Messages.ZoomLevelSwitcher_ZoomOut);
-        btnZoomOut.setLayoutData(new RowData(32, 32));
         
         btnZoomOut.addSelectionListener(new SelectionListener() {
 
@@ -275,9 +288,8 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         });
         
         btnZoomIn = new Button(composite, SWT.PUSH);
-        btnZoomIn.setText("+");
+        btnZoomIn.setImage(imageCache.get(ICON_ZOOM_IN));
         btnZoomIn.setToolTipText(Messages.ZoomLevelSwitcher_ZoomIn);
-        btnZoomIn.setLayoutData(new RowData(32, 32));
         
         btnZoomIn.addSelectionListener(new SelectionListener() {
 
@@ -304,6 +316,21 @@ public class WMTZoomLevelSwitcher extends ViewPart {
 
         getSite().getWorkbenchWindow().getPartService().addPartListener(listenerMapEditor);
         //endregion
+    }
+
+    /**
+     * Creates the ImageRegistry and adds the two icons.
+     */
+    private void setUpImageCache(final Composite parent) {
+        imageCache = new ImageRegistry(parent.getDisplay());
+        
+        ImageDescriptor descZoomOut = ImageDescriptor.createFromFile(getClass(), 
+                ICON_ZOOM_OUT_PATH);
+        imageCache.put(ICON_ZOOM_OUT, descZoomOut);
+        
+        ImageDescriptor descZoomIn = ImageDescriptor.createFromFile(getClass(), 
+                ICON_ZOOM_IN_PATH);
+        imageCache.put(ICON_ZOOM_IN, descZoomIn);        
     }
     //endregion
     
