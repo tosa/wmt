@@ -67,5 +67,17 @@
            name="%zoomLevelSwitcher.name"
            restorable="true">
      </view>
+  </extension>
+  <extension
+        point="org.eclipse.ui.menus">
+        <menuContribution
+              locationURI="toolbar:org.eclipse.ui.main.toolbar">
+              <toolbar
+                    id="net.refractions.udig.catalog.wmt.toolbarZoomLevelSwitcher">
+                    <control
+                          class="net.refractions.udig.catalog.internal.wmt.ui.view.WMTZoomLevelToolbar">
+                    </control>
+              </toolbar>
+        </menuContribution>
   </extension>   
 </plugin>

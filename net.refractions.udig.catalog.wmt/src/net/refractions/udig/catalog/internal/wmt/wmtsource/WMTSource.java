@@ -4,11 +4,16 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import net.refractions.udig.catalog.internal.wmt.WMTService;
+import net.refractions.udig.catalog.internal.wmt.tile.OSMTile;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
+import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName.OSMZoomLevel;
+import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
+import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerProperties;
 import net.refractions.udig.catalog.wmsc.server.Tile;
 import net.refractions.udig.core.internal.CorePlugin;
@@ -19,6 +24,8 @@ import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.util.ObjectCache;
 import org.geotools.util.ObjectCaches;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+
+import com.vividsolutions.jts.geom.Envelope;
 
 /**
  *
@@ -59,6 +66,10 @@ public abstract class WMTSource {
     
     public int getTileHeight() {
         return 256;
+    }
+    
+    public String getFileFormat() {
+        return "png"; //$NON-NLS-1$
     }
     
     public ReferencedEnvelope getBounds() {
@@ -126,17 +137,8 @@ public abstract class WMTSource {
         return DefaultGeographicCRS.WGS84;
     }
     //endregion
-    
-    
-    public WMTService getWmtService() {
-        return wmtService;
-    }
 
-    public void setWmtService(WMTService wmtService) {
-        this.wmtService = wmtService;
-    }
-
-    //region Methods to access the tile-list
+    //region Methods to access the tile-list (cache)
     public boolean listContainsTile(String tileId) {
         System.out.println("ListContainsTile: " + (tiles.peek(tileId) == null) + " - " + (tiles.get(tileId) == null));
         return !(tiles.peek(tileId) == null || tiles.get(tileId) == null);
@@ -165,6 +167,15 @@ public abstract class WMTSource {
     }
     //endregion
     
+    //region Methods related to the service    
+    public WMTService getWmtService() {
+        return wmtService;
+    }
+
+    public void setWmtService(WMTService wmtService) {
+        this.wmtService = wmtService;
+    }
+    
     /**
      * Returns the catalog url for a given class.
      * <pre>
@@ -188,6 +199,7 @@ public abstract class WMTSource {
         
         return url; 
     }
+    //endregion
     
     //region Zoom-level
     /**
@@ -320,20 +332,83 @@ public abstract class WMTSource {
     }
     //endregion
     
-    //region Tiles-Cutting    
+    //region Tiles-Cutting  
     /**
-     * Cuts extent into tiles.
+     * Returns the TileFactory which is used to call the 
+     * method getTileFromCoordinate().
+     */
+    public abstract WMTTileFactory getTileFactory();
+   
+    //todo: check if tile is rendered from OSM before adding to list (otherwise take the next zoom level!)
+    /**
+     * OSM implementation of cutting the tiles.
      * 
+     * @see WMTSource.cutExtentIntoTiles(ReferencedEnvelope extent, double scale)
      * @param extent The extent which should be cut.
      * @param scale The map scale.
      * @param scaleFactor The scale-factor (0-100): scale up or down?
-     * @param recommendedZoomLevel Force to use the recommend zoom-level 
      * @return The list of found tiles.
      */
-    public abstract Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, 
-            double scale, int scaleFactor, boolean recommendedZoomLevel,
-            WMTLayerProperties layerProperties);
-        //endregion
+    public Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale, 
+            int scaleFactor, boolean recommendedZoomLevel, WMTLayerProperties layerProperties) {
+        WMTTileFactory tileFactory = getTileFactory();
+        
+        
+        WMTZoomLevel zoomLevel = tileFactory.getZoomLevel(getZoomLevelToUse(scale, 
+                scaleFactor, recommendedZoomLevel, layerProperties));
+        long maxNumberOfTiles = ((long) zoomLevel.getMaxTileNumber()) * ((long) zoomLevel.getMaxTileNumber());
+                
+        Map<String, Tile> tileList = new HashMap<String, Tile>();
+        
+        System.out.println("MinX: " + extent.getMinX() + " MaxX: " + extent.getMaxX());
+        System.out.println("MinY: " + extent.getMinY() + " MaxY: " + extent.getMaxY());
+        
+        // Let's get the first tile which covers the upper-left corner
+        WMTTile firstTile = tileFactory.getTileFromCoordinate(extent.getMaxY(), extent.getMinX(), zoomLevel, this);
+        tileList.put(firstTile.getId(), addTileToList(firstTile));
+        
+        WMTTile firstTileOfRow = null;
+        WMTTile movingTile = firstTileOfRow = firstTile;
+        // Loop column
+        do {
+            // Loop row
+            do {
+                // get the next tile right of this one
+                WMTTile rightNeighbour = movingTile.getRightNeighbour();
+                
+                // Check if the new tile is still part of the extent and
+                // that we don't have the first tile again
+                if (extent.intersects((Envelope) rightNeighbour.getExtent())
+                        && !firstTileOfRow.equals(rightNeighbour)) {
+                    tileList.put(rightNeighbour.getId(), addTileToList(rightNeighbour));
+                    
+                    System.out.println("adding tile(r) " + rightNeighbour.getId());
+                    
+                    movingTile = rightNeighbour;
+                } else {
+                    break;
+                }
+            } while(tileList.size() <= maxNumberOfTiles);
+
+            // get the next tile under the first one of the row
+            WMTTile lowerNeighbour = firstTileOfRow.getLowerNeighbour();
+            
+            // Check if the new tile is still part of the extent
+            if (extent.intersects((Envelope) lowerNeighbour.getExtent())
+                    && !firstTile.equals(lowerNeighbour)) {
+                tileList.put(lowerNeighbour.getId(), addTileToList(lowerNeighbour));
+                
+                System.out.println("adding tile(l) " + lowerNeighbour.getId());
+                
+                firstTileOfRow = movingTile = lowerNeighbour;
+            } else {
+                break;
+            }            
+        } while(tileList.size() <= maxNumberOfTiles);
+        
+        return tileList;
+    }
+    //endregion
     
     @Override
     public String toString() {

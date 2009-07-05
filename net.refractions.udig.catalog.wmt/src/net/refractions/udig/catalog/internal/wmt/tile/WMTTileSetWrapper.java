@@ -47,7 +47,7 @@ public class WMTTileSetWrapper extends WMSTileSet {
     @Override
     public String getFormat() {
         //return super.getFormat();
-        return "image\\png"; //$NON-NLS-1$
+        return "image\\" + wmtSource.getFileFormat(); //$NON-NLS-1$
     }
 
     @Override

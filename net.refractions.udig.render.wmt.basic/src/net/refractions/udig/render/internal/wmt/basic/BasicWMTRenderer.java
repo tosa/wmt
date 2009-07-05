@@ -260,9 +260,14 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                 }
                 Tile tile = tiles.get(key);
                 if (tile != null && tile.getBufferedImage() != null && tile.getTileState() != WMSTile.INERROR) {
+                    try {
                     renderTile(destination, (WMTTile) tile, style, crsMap, crsTilesProjected, 
                             transformTileCrsToTilesProjected, transformTilesProjectedToMap);
                     renderedTiles.add(key);
+                    } catch(Exception exc) {
+                        System.out.println("rendertile failed: " + tile.getId());
+                        // todo: error msg
+                    }
                     monitor.worked(tileWorth);  // inc the monitor work by 1 tile
                 }
                 else {
@@ -345,16 +350,23 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                     ReferencedEnvelope viewbounds = getContext().getImageBounds();
                     if (tile != null && tile.getBufferedImage() != null &&
                             viewbounds != null && 
+                            
+                            // todo: mapExtentProjected may have changed! (use the actual reprojected extent!)
                             mapExtentProjected.intersects(tile.getBounds()) &&
                             // todo: the following is from WMSCRenderer:
                             // it assumes that the map and the tile have the same CRS
                             // is that always true? (possible bug?)
                             //viewbounds.intersects(tile.getBounds()) && 
                             !renderedTiles.contains(tile.getId())) {
-    
-                        renderTile(destination, (WMTTile) tile, style, crsMap, crsTilesProjected, 
-                                transformTileCrsToTilesProjected, transformTilesProjectedToMap);
-                        renderedTiles.add(tile.getId());
+                        try {
+                            renderTile(destination, (WMTTile) tile, style, crsMap, crsTilesProjected, 
+                                    transformTileCrsToTilesProjected, transformTilesProjectedToMap);
+                            renderedTiles.add(tile.getId());
+                            
+                        } catch(Exception exc) {
+                            System.out.println("rendertile failed: " + tile.getId());
+                            //todo : error msg.
+                        }
                         monitor.worked(tileWorth);  // inc the monitor work by 1 tile
                         setState(RENDERING); // tell renderer new data is ready                
                     }
@@ -432,7 +444,8 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             
             paint.paint(graphics, coverage, style);
            
-            if( TESTING ){
+            //if( TESTING ){
+            if( true ){
                 /* for testing draw border around tiles */
                 graphics.setColor(Color.BLACK);
                 graphics.drawLine((int)tileSize.getMinX(), (int)tileSize.getMinY(), (int)tileSize.getMinX(), (int)tileSize.getMaxY());

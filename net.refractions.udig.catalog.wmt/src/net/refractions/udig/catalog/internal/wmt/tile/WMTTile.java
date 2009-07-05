@@ -3,15 +3,13 @@ package net.refractions.udig.catalog.internal.wmt.tile;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
 
 import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.catalog.wmsc.server.Tile;
 import net.refractions.udig.catalog.wmsc.server.TileSet;
 
@@ -58,6 +56,10 @@ public abstract class WMTTile implements Tile{
     public String getReleatedSourceName() {
         return tileName.getSource().getName();
     }
+    
+    public abstract WMTTile getRightNeighbour();
+    public abstract WMTTile getLowerNeighbour();
+       
     
     /**
      * 
@@ -247,4 +249,65 @@ public abstract class WMTTile implements Tile{
         return super.equals(arg0);
     }
     
+    /**
+     * TileFactory is used inside WMTSource.cutExtentIntoTiles(..)
+     * 
+     * @author to.srwn
+     * @since 1.1.0
+     */
+    public static abstract class WMTTileFactory {
+        public abstract WMTTile getTileFromCoordinate(double lat, double lon, 
+                WMTZoomLevel zoomLevel, WMTSource wmtSource);
+        
+        public abstract WMTZoomLevel getZoomLevel(int zoomLevel);
+        
+        /**
+         * uDig may produce numbers like -210° for the longitude, but we need
+         * a number in the range -180 to 180, so instead of -210 we want 150.
+         * 
+         * @param value the number to normalize (e.g. -210)
+         * @param maxValue the maximum value (e.g. 180 -> the range is: -180..180)
+         * @return a number between (-maxvalue) and maxvalue
+         */
+        public static double normalizeDegreeValue(double value, int maxValue) {
+            int range = 2 * maxValue;
+            value = (value + maxValue) % range;
+            
+            if (value < 0) {
+                value += range;
+            }
+            
+            return (value-maxValue);
+        }
+    }
+    
+    public static abstract class WMTZoomLevel {
+        private int zoomLevel;
+        private int maxTileNumber;
+        
+        public WMTZoomLevel(int zoomLevel) {
+            this.zoomLevel = zoomLevel;  
+            
+            maxTileNumber = calculateMaxTileNumber(zoomLevel);
+        }
+
+        public abstract int calculateMaxTileNumber(int zoomLevel);
+        
+        public int getZoomLevel() {
+            return zoomLevel;
+        }
+        
+        public int getMaxTileNumber() {
+            return maxTileNumber;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof WMTZoomLevel)) return false;
+            
+            WMTZoomLevel other = (WMTZoomLevel) obj;
+            
+            return zoomLevel == other.zoomLevel;
+        }
+    }
 }

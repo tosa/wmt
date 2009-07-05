@@ -2,6 +2,7 @@ package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
 import java.util.Map;
 
+import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
 import net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerProperties;
 import net.refractions.udig.catalog.wmsc.server.Tile;
 
@@ -31,6 +32,11 @@ public class VESource extends WMTSource {
             double scale, int scaleFactor, boolean recommendedZoomLevel, 
             WMTLayerProperties layerProperties) {
         throw new NotImplementedException();
+    }
+
+    @Override
+    public WMTTileFactory getTileFactory() {
+        return null;
     }
 
 }

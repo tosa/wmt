@@ -8,6 +8,7 @@ import java.util.Collection;
 import net.refractions.udig.catalog.IService;
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.WMTServiceExtension;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMCycleMapSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMMapnikSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMOsmarenderSource;
@@ -177,6 +178,15 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         addWMTSourceToTree(osm, OSMCycleMapSource.class);
 
         osm.setExpanded(true);
+        //endregion
+        
+        //region Add MapQuest services
+        TreeItem mq = new TreeItem(tree, SWT.NONE);
+        mq.setText(MQSource.NAME);
+
+        addWMTSourceToTree(mq, MQSource.class);
+
+        mq.setExpanded(true);
         //endregion
         
         //todo: add other services

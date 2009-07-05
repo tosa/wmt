@@ -6,13 +6,13 @@ import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 
 public abstract class WMTTileName {
     public static final String ID_DIVIDER = "_"; //$NON-NLS-1$
-    
-    private int zoomLevel;
+        
+    private WMTTile.WMTZoomLevel zoomLevel;
     private int x;
     private int y;
     private WMTSource source;
     
-    public WMTTileName(int zoomLevel, int x, int y, WMTSource source) {
+    public WMTTileName(WMTTile.WMTZoomLevel zoomLevel, int x, int y, WMTSource source) {
         this.zoomLevel = zoomLevel;
         this.x = x;
         this.y = y;
@@ -20,7 +20,7 @@ public abstract class WMTTileName {
     }
     
     public int getZoomLevel() {
-        return zoomLevel;
+        return zoomLevel.getZoomLevel();
     }
 
     public int getX() {
@@ -43,5 +43,19 @@ public abstract class WMTTileName {
     }
     
     public abstract URL getTileUrl();
-       
+    
+    /**
+     * Arithmetic implementation of modulo,
+     * as the Java implementation of modulo can return negative values.
+     * <pre>
+     * arithmeticMod(-1, 8) = 7
+     * </pre>
+     *
+     * @param a
+     * @param b
+     * @return the positive remainder
+     */
+    public static int arithmeticMod(int a, int b) {
+        return (a >= 0) ? a % b : a % b + b;
+    }       
 }
