@@ -351,9 +351,10 @@ public abstract class WMTSource {
      */
     public Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale, 
             int scaleFactor, boolean recommendedZoomLevel, WMTLayerProperties layerProperties) {
+        extent = normalizeExtent(extent);
+        
         WMTTileFactory tileFactory = getTileFactory();
-        
-        
+                
         WMTZoomLevel zoomLevel = tileFactory.getZoomLevel(getZoomLevelToUse(scale, 
                 scaleFactor, recommendedZoomLevel, layerProperties));
         long maxNumberOfTiles = ((long) zoomLevel.getMaxTileNumber()) * ((long) zoomLevel.getMaxTileNumber());
@@ -407,6 +408,41 @@ public abstract class WMTSource {
         } while(tileList.size() <= maxNumberOfTiles);
         
         return tileList;
+    }
+    
+    /**
+     * The extent from the viewport may look like this:
+     * MaxY: 110° (=-70°)   MinY: -110°
+     * MaxX: 180°           MinX: 180°
+     * 
+     * But cutExtentIntoTiles(..) requires an extent that looks like this:
+     * MaxY: 85°            MinY: -85°
+     * MaxX: 180°           MinX: 180°
+     * 
+     * @param envelope
+     * @return
+     */
+    private ReferencedEnvelope normalizeExtent(ReferencedEnvelope envelope) {
+        ReferencedEnvelope bounds = getBounds();
+        
+        if (    envelope.getMaxY() > bounds.getMaxY() ||
+                envelope.getMinY() < bounds.getMinY() ||
+                envelope.getMaxX() > bounds.getMaxX() ||
+                envelope.getMinX() < bounds.getMinX()   ) {
+            
+            
+            double maxY = (envelope.getMaxY() > bounds.getMaxY()) ? bounds.getMaxY() : envelope.getMaxY();
+            double minY = (envelope.getMinY() < bounds.getMinY()) ? bounds.getMinY() : envelope.getMinY(); 
+            double maxX = (envelope.getMaxX() > bounds.getMaxX()) ? bounds.getMaxX() : envelope.getMaxX();
+            double minX = (envelope.getMinX() < bounds.getMinX()) ? bounds.getMinX() : envelope.getMinX(); 
+            
+            ReferencedEnvelope newEnvelope = new ReferencedEnvelope(minX, maxX, minY, maxY, 
+                    envelope.getCoordinateReferenceSystem());
+            
+            return newEnvelope;
+        }
+        
+        return envelope;
     }
     //endregion
     

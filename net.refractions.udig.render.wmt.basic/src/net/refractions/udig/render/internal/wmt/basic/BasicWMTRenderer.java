@@ -266,6 +266,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                     renderedTiles.add(key);
                     } catch(Exception exc) {
                         System.out.println("rendertile failed: " + tile.getId());
+                        throw exc;
                         // todo: error msg
                     }
                     monitor.worked(tileWorth);  // inc the monitor work by 1 tile
@@ -347,16 +348,12 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                     // can result in listeners being notified the same tile is ready multiple
                     // times but we don't want to draw it more than once per render cycle)
                     //ReferencedEnvelope viewbounds = getContext().getViewportModel().getBounds();
-                    ReferencedEnvelope viewbounds = getContext().getImageBounds();
+                    
+                    ReferencedEnvelope viewbounds = getProjectedEnvelope(getContext().getImageBounds(), 
+                            crsTiles, transformMapToTileCrs);
                     if (tile != null && tile.getBufferedImage() != null &&
                             viewbounds != null && 
-                            
-                            // todo: mapExtentProjected may have changed! (use the actual reprojected extent!)
-                            mapExtentProjected.intersects(tile.getBounds()) &&
-                            // todo: the following is from WMSCRenderer:
-                            // it assumes that the map and the tile have the same CRS
-                            // is that always true? (possible bug?)
-                            //viewbounds.intersects(tile.getBounds()) && 
+                            viewbounds.intersects(tile.getBounds()) && 
                             !renderedTiles.contains(tile.getId())) {
                         try {
                             renderTile(destination, (WMTTile) tile, style, crsMap, crsTilesProjected, 
@@ -365,6 +362,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                             
                         } catch(Exception exc) {
                             System.out.println("rendertile failed: " + tile.getId());
+                            throw exc;
                             //todo : error msg.
                         }
                         monitor.worked(tileWorth);  // inc the monitor work by 1 tile
@@ -444,8 +442,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             
             paint.paint(graphics, coverage, style);
            
-            //if( TESTING ){
-            if( true ){
+            if(TESTING){
                 /* for testing draw border around tiles */
                 graphics.setColor(Color.BLACK);
                 graphics.drawLine((int)tileSize.getMinX(), (int)tileSize.getMinY(), (int)tileSize.getMinX(), (int)tileSize.getMaxY());
@@ -548,12 +545,17 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             // no need to reproject
             return envelope;
         } else {         
-            // Reproject envelope
+            // Reproject envelope: first try JTS.transform, if that fails use ReferencedEnvelope.transform
             try {
                 return new ReferencedEnvelope(JTS.transform(envelope, transformation), destinationCRS);
-            } catch(Exception exc) {
-                throw new RenderException("transformation error");
-              //todo: nice error message
+                
+            } catch(Exception exc1) {
+                try {
+                    return envelope.transform(destinationCRS, false);
+                } catch(Exception exc2) {
+                    throw new RenderException("transformation error: " + exc2.getMessage());
+                    //todo: nice error message
+                }
             }
         }
     }
