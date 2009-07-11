@@ -89,10 +89,9 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         listenerMap = new IMapCompositionListener(){
             public void changed(MapCompositionEvent event) {
 
-                if (parentControl == null)
-                    return;
+                if (parentControl == null || parentControl.isDisposed()) return;
                 
-                parentControl.getDisplay().syncExec(new Runnable(){
+                parentControl.getDisplay().asyncExec(new Runnable(){
                     public void run() {
                         updateGUI(ApplicationGIS.getActiveMap());
                     }
@@ -105,11 +104,10 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         listenerViewport = new IViewportModelListener() {
             public void changed(ViewportModelEvent event) {
                 
-                if (parentControl == null) 
-                    return;
+                if (parentControl == null || parentControl.isDisposed()) return;
                                 
                 // when the scale changes, update the zoom-level ComboBox  
-                parentControl.getDisplay().syncExec(new Runnable() {
+                parentControl.getDisplay().asyncExec(new Runnable() {
                     public void run(){
                         updateGUIFromScale();
                     }
@@ -126,12 +124,18 @@ public class WMTZoomLevelSwitcher extends ViewPart {
                 if (part == currentPart)
                     return;
                 
-                IMap map = getMapFromPart(part);
+                final IMap map = getMapFromPart(part);
                 
                 if (map != null) {
                     currentPart = part;
-
-                    setUpMapListeners(map);
+                    
+                    if (parentControl == null || parentControl.isDisposed()) return;
+                    
+                    parentControl.getDisplay().asyncExec(new Runnable() {
+                        public void run(){
+                            setUpMapListeners(map);
+                        }
+                    });
                 }
                 
             }
@@ -142,9 +146,16 @@ public class WMTZoomLevelSwitcher extends ViewPart {
 
             public void partClosed(IWorkbenchPart part) {                
                 if (part == WMTZoomLevelSwitcher.this) {
+                    if (parentControl == null || parentControl.isDisposed()) return;
+                    
                     // if the tool itself is closed
-                    removeAllListeners();
-                    currentPart = null;
+                    parentControl.getDisplay().asyncExec(new Runnable() {
+                        public void run(){
+                            removeAllListeners();
+                            
+                            currentPart = null;
+                        }
+                    });
                     
                     return;
                 }
@@ -152,11 +163,17 @@ public class WMTZoomLevelSwitcher extends ViewPart {
                 if (part != currentPart)
                     return;
 
-                IMap map = getMapFromPart(part);
+                final IMap map = getMapFromPart(part);
                 
                 if(map != null) {
+                    if (parentControl == null || parentControl.isDisposed()) return;
+                    
                     // remove 
-                    removeMapListeners(map, true);
+                    parentControl.getDisplay().asyncExec(new Runnable() {
+                        public void run(){
+                            removeMapListeners(map, true);
+                        }
+                    });
                 }
                 
                 currentPart = null;
@@ -203,7 +220,7 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         map.removeMapCompositionListener(listenerMap);  
         map.getViewportModel().removeViewportModelListener(listenerViewport);   
         
-        if (updateGUI) {            
+        if (updateGUI && parentControl != null && !parentControl.isDisposed()) {            
             currentMap = ApplicationGIS.NO_MAP;
             layerList.clear();
             
