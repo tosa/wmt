@@ -30,7 +30,7 @@ public class MQTile extends WMTTile {
     /**
      * Returns the bounding box of a tile by the given tile name.
      * 
-     * The lower right corner of tile 0/0 is at -90,-180.
+     * The lower left corner of tile 0/0 is at -90,-180.
      * 
      * see:
      * http://developer.mapquest.com/content/documentation/ApiDocumentation/53/JavaScript/JS_DeveloperGuide_v5.3.0.1.htm#styler-id1.17
@@ -114,7 +114,7 @@ public class MQTile extends WMTTile {
 
         //endregion
 
-        public WMTZoomLevel getZoomLevel( int zoomLevel ) {
+        public WMTZoomLevel getZoomLevel(int zoomLevel, WMTSource wmtSource) {
             return new MQTileName.MQZoomLevel(zoomLevel);
         }
         
@@ -164,17 +164,17 @@ public class MQTile extends WMTTile {
             return null;
         }
        
-        private double getCenterLon(int scale) {
+        public double getCenterLon(int scale) {
             return MQTile.tile2lon(getX() + 0.5, scale);
         }
        
-        private double getCenterLat(int scale) {
+        public double getCenterLat(int scale) {
             return MQTile.tile2lat(getY() + 0.5, scale);
         }
         
         public MQTileName getRightNeighbour() {
             return new MQTileName( 
-                        WMTTileName.arithmeticMod((getX()+1), zoomLevel.getMaxTileNumber()),
+                        WMTTileName.arithmeticMod((getX()+1), zoomLevel.getMaxTilePerRowNumber()),
                         getY(),
                         zoomLevel,
                         mqSource);
@@ -183,7 +183,7 @@ public class MQTile extends WMTTile {
         public MQTileName getLowerNeighbour() {
             return new MQTileName( 
                         getX(),
-                        WMTTileName.arithmeticMod((getY()-1), zoomLevel.getMaxTileNumber()),
+                        WMTTileName.arithmeticMod((getY()-1), zoomLevel.getMaxTilePerColNumber()),
                         zoomLevel,
                         mqSource);
         }
@@ -245,8 +245,14 @@ public class MQTile extends WMTTile {
              * For example at zoom-level 0, the tilenames are in the following range:
              * 0..1
              */
-            public int calculateMaxTileNumber(int zoomLevel) { 
+            @Override
+            public int calculateMaxTilePerColNumber(int zoomLevel) {
                 return MQZoomLevel.maxTileNumbers[zoomLevel];  
+            }
+
+            @Override
+            public int calculateMaxTilePerRowNumber(int zoomLevel) {
+                return calculateMaxTilePerColNumber(zoomLevel);
             }   
         }
         

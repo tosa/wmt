@@ -1,21 +1,19 @@
 package net.refractions.udig.tests.catalog.wmt;
 
-import org.geotools.geometry.jts.JTS;
-import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.geotools.referencing.CRS;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.MathTransform;
-
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Point;
-
+import junit.framework.TestCase;
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile;
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName;
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName.OSMZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMMapnikSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
-import junit.framework.TestCase;
+
+import org.geotools.geometry.jts.JTS;
+import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.referencing.CRS;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.MathTransform;
+
+import com.vividsolutions.jts.geom.Coordinate;
 
 
 public class OSMTileTest extends TestCase{
@@ -80,6 +78,7 @@ public class OSMTileTest extends TestCase{
         assertEquals(true, true);
     }
     
+    //todo: remove
     public void testYahooTry() {
         OSMSource osmSource = new OSMMapnikSource();
 

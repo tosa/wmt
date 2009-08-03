@@ -141,7 +141,7 @@ public class OSMTile extends WMTTile {
         }   
         //endregion
 
-        public WMTZoomLevel getZoomLevel( int zoomLevel ) {
+        public WMTZoomLevel getZoomLevel(int zoomLevel, WMTSource wmtSource) {
             return new OSMTileName.OSMZoomLevel(zoomLevel);
         }
         
@@ -198,7 +198,7 @@ public class OSMTile extends WMTTile {
         
         public OSMTileName getRightNeighbour() {
             return new OSMTileName( 
-                        WMTTileName.arithmeticMod((getX()+1), zoomLevel.getMaxTileNumber()),
+                        WMTTileName.arithmeticMod((getX()+1), zoomLevel.getMaxTilePerRowNumber()),
                         getY(),
                         zoomLevel,
                         osmSource);
@@ -215,7 +215,7 @@ public class OSMTile extends WMTTile {
         public OSMTileName getLowerNeighbour() {
             return new OSMTileName( 
                         getX(),
-                        WMTTileName.arithmeticMod((getY()+1), zoomLevel.getMaxTileNumber()),
+                        WMTTileName.arithmeticMod((getY()+1), zoomLevel.getMaxTilePerColNumber()),
                         zoomLevel,
                         osmSource);
         }
@@ -247,7 +247,7 @@ public class OSMTile extends WMTTile {
             public OSMZoomLevel(int zoomLevel) {
                 super(zoomLevel);
             }
-
+           
             /**
              * The maximum tile-number:
              * 
@@ -256,8 +256,14 @@ public class OSMTile extends WMTTile {
              * 
              * (zoom-level/x/y): zoom-level/2^(zoom-level)-1/2^(zoom-level)-1)
              */
-            public int calculateMaxTileNumber(int zoomLevel) { 
-                return (1 << zoomLevel); // 2 ^ (zoomLevel) 
+            @Override
+            public int calculateMaxTilePerColNumber(int zoomLevel) {
+                return (1 << zoomLevel); // 2 ^ (zoomLevel)
+            }
+
+            @Override
+            public int calculateMaxTilePerRowNumber(int zoomLevel) {
+                return calculateMaxTilePerColNumber(zoomLevel);
             }   
         }
         

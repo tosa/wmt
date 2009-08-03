@@ -259,7 +259,7 @@ public abstract class WMTTile implements Tile{
         public abstract WMTTile getTileFromCoordinate(double lat, double lon, 
                 WMTZoomLevel zoomLevel, WMTSource wmtSource);
         
-        public abstract WMTZoomLevel getZoomLevel(int zoomLevel);
+        public abstract WMTZoomLevel getZoomLevel(int zoomLevel, WMTSource wmtSource);
         
         /**
          * uDig may produce numbers like -210° for the longitude, but we need
@@ -283,21 +283,44 @@ public abstract class WMTTile implements Tile{
     
     public static abstract class WMTZoomLevel {
         private int zoomLevel;
-        private int maxTileNumber;
+        
+        private int maxTilePerRowNumber;
+        private int maxTilePerColNumber;
+        private long maxTileNumber;
         
         public WMTZoomLevel(int zoomLevel) {
-            this.zoomLevel = zoomLevel;  
-            
-            maxTileNumber = calculateMaxTileNumber(zoomLevel);
+            setZoomLevel(zoomLevel);  
         }
-
-        public abstract int calculateMaxTileNumber(int zoomLevel);
+        
+        public void setZoomLevel(int zoomLevel) {
+            this.zoomLevel = zoomLevel;
+            
+            this.maxTilePerRowNumber = calculateMaxTilePerRowNumber(zoomLevel);
+            this.maxTilePerColNumber = calculateMaxTilePerColNumber(zoomLevel);
+            
+            this.maxTileNumber = calculateMaxTileNumber();
+        }
+        
+        public abstract int calculateMaxTilePerRowNumber(int zoomLevel);
+        public abstract int calculateMaxTilePerColNumber(int zoomLevel);
+        
+        public long calculateMaxTileNumber() {
+            return ((long) (maxTilePerColNumber + 1)) * ((long) (maxTilePerRowNumber + 1));
+        }
         
         public int getZoomLevel() {
             return zoomLevel;
         }
         
-        public int getMaxTileNumber() {
+        public int getMaxTilePerRowNumber() {
+            return maxTilePerRowNumber;
+        }
+        
+        public int getMaxTilePerColNumber() {
+            return maxTilePerColNumber;
+        }
+        
+        public long getMaxTileNumber() {
             return maxTileNumber;
         }
 

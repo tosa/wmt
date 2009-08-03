@@ -1,6 +1,5 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
-import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -9,9 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.refractions.udig.catalog.internal.wmt.WMTService;
-import net.refractions.udig.catalog.internal.wmt.tile.OSMTile;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
-import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName.OSMZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerProperties;
@@ -266,7 +263,7 @@ public abstract class WMTSource {
      *
      * @param scale
      * @param scaleFactor
-     * @param useRecommended
+     * @param useRecommended always use the calculated zoom-level, do not use the one the user selected
      * @return
      */
     public int getZoomLevelToUse(double scale, int scaleFactor, boolean useRecommended,
@@ -339,14 +336,15 @@ public abstract class WMTSource {
      */
     public abstract WMTTileFactory getTileFactory();
    
-    //todo: check if tile is rendered from OSM before adding to list (otherwise take the next zoom level!)
     /**
-     * OSM implementation of cutting the tiles.
+     * The method which finds all tiles that are within the given extent,
+     * used for all different map services.
      * 
      * @see WMTSource.cutExtentIntoTiles(ReferencedEnvelope extent, double scale)
      * @param extent The extent which should be cut.
      * @param scale The map scale.
      * @param scaleFactor The scale-factor (0-100): scale up or down?
+     * @param recommendedZoomLevel Always use the calculated zoom-level, do not use the one the user selected
      * @return The list of found tiles.
      */
     public Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale, 
@@ -356,8 +354,8 @@ public abstract class WMTSource {
         WMTTileFactory tileFactory = getTileFactory();
                 
         WMTZoomLevel zoomLevel = tileFactory.getZoomLevel(getZoomLevelToUse(scale, 
-                scaleFactor, recommendedZoomLevel, layerProperties));
-        long maxNumberOfTiles = ((long) zoomLevel.getMaxTileNumber()) * ((long) zoomLevel.getMaxTileNumber());
+                scaleFactor, recommendedZoomLevel, layerProperties), this);
+        long maxNumberOfTiles = zoomLevel.getMaxTileNumber();
                 
         Map<String, Tile> tileList = new HashMap<String, Tile>();
         
@@ -365,7 +363,8 @@ public abstract class WMTSource {
         System.out.println("MinY: " + extent.getMinY() + " MaxY: " + extent.getMaxY());
         
         // Let's get the first tile which covers the upper-left corner
-        WMTTile firstTile = tileFactory.getTileFromCoordinate(extent.getMaxY(), extent.getMinX(), zoomLevel, this);
+        WMTTile firstTile = tileFactory.getTileFromCoordinate(
+                extent.getMaxY(), extent.getMinX(), zoomLevel, this);
         tileList.put(firstTile.getId(), addTileToList(firstTile));
         
         WMTTile firstTileOfRow = null;
@@ -413,11 +412,11 @@ public abstract class WMTSource {
     /**
      * The extent from the viewport may look like this:
      * MaxY: 110° (=-70°)   MinY: -110°
-     * MaxX: 180°           MinX: 180°
+     * MaxX: 180°           MinX: -180°
      * 
      * But cutExtentIntoTiles(..) requires an extent that looks like this:
-     * MaxY: 85°            MinY: -85°
-     * MaxX: 180°           MinX: 180°
+     * MaxY: 85° (or 90°)   MinY: -85° (or -90°)
+     * MaxX: 180°           MinX: -180°
      * 
      * @param envelope
      * @return
@@ -450,8 +449,4 @@ public abstract class WMTSource {
     public String toString() {
         return getName();
     }
-    
-       
-    
-
 }
