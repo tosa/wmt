@@ -15,7 +15,7 @@ public class MQSource extends WMTSource {
     private static WMTTileFactory tileFactory = new MQTile.MQTileFactory();
     private static MQAPIWrapper apiWrapper = null;
     
-    public MQSource() {
+    protected MQSource() {
         System.out.println(NAME);
         setName(NAME); 
     }

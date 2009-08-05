@@ -2,10 +2,14 @@ package net.refractions.udig.tests.catalog.wmt;
 
 import org.geotools.geometry.jts.ReferencedEnvelope;
 
+import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.tile.MQTile;
 import net.refractions.udig.catalog.internal.wmt.tile.MQTile.MQTileName.MQZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.tile.MQTile.MQTileName;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSourceFactory;
 import junit.framework.TestCase;
 
 
@@ -18,7 +22,7 @@ public class MQTileTest extends TestCase {
     }
     
     public void testLon0Bug() {
-        MQSource source = new MQSource();
+        MQSource source = (MQSource) WMTSourceFactory.createSource(null, WMTSource.getRelatedServiceUrl(MQSource.class), null, true);
         MQTile tile = new MQTile(58, 92, new MQZoomLevel(4), source);
         MQTile tile2 = tile.getRightNeighbour(); 
         

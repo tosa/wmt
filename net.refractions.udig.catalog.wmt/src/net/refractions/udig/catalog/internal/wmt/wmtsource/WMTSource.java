@@ -1,5 +1,6 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -46,8 +47,9 @@ public abstract class WMTSource {
     
     private WMTService wmtService;
     
-    public WMTSource() {
-    }
+    protected WMTSource() {}
+    
+    protected void init(Map<String, Serializable> params) throws Exception {}
     
     public void setName(String name) {
         this.name = name;

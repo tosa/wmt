@@ -7,6 +7,8 @@ import net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerPropertie
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMMapnikSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMOsmarenderSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSourceFactory;
 import net.refractions.udig.catalog.wmsc.server.Tile;
 
 import org.geotools.geometry.jts.ReferencedEnvelope;
@@ -14,8 +16,8 @@ import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 public class OSMSourceTest extends TestCase{
     
-    private OSMSource source = new OSMMapnikSource();
-    private OSMSource sourceOsmarender = new OSMOsmarenderSource();
+    private OSMSource source = (OSMMapnikSource) WMTSourceFactory.createSource(null, WMTSource.getRelatedServiceUrl(OSMMapnikSource.class), null, true);
+    private OSMSource sourceOsmarender = (OSMOsmarenderSource) WMTSourceFactory.createSource(null, WMTSource.getRelatedServiceUrl(OSMOsmarenderSource.class), null, true);
         
     public void testZoomLevelMappingScaleFactor50() {        
         // Tests for scale-factor = 50

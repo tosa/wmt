@@ -121,11 +121,7 @@ public class OSMTile extends WMTTile {
              * 85.0511 °N to 85.0511 °S (http://wiki.openstreetmap.org/wiki/Tilenames#X_and_Y),
              * we have to correct if necessary.
              */
-            if (lat > 85.0511) {
-                lat = 85.0511;
-            } else if(lat < -85.0511) {
-                lat = -85.0511;            
-            }
+            lat = WMTTileFactory.moveInRange(lat, -85.0511, 85.0511);
             
             int xTile = (int) Math.floor((lon + 180) / 360 * (1 << zoomLevel.getZoomLevel()));
             int yTile = (int) Math.floor(

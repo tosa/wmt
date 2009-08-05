@@ -271,13 +271,45 @@ public abstract class WMTTile implements Tile{
          */
         public static double normalizeDegreeValue(double value, int maxValue) {
             int range = 2 * maxValue;
-            value = (value + maxValue) % range;
             
-            if (value < 0) {
-                value += range;
+            if (value > 0) {
+                value = (value + maxValue - 1) % range;
+                
+                if (value < 0) {
+                    value += range;
+                }
+                
+                return (value - maxValue + 1);
+            } else {
+                value = (value + maxValue) % range;
+                
+                if (value < 0) {
+                    value += range;
+                }
+                
+                return (value - maxValue);                
+            }
+        }
+        
+        /**
+         * This method ensures that value is between min and max. 
+         * If value < min, min is returned.
+         * If value > max, max is returned.
+         * Otherwise value.
+         *
+         * @param value
+         * @param min
+         * @param max
+         * @return
+         */
+        public static double moveInRange(double value, double min, double max) {
+            if (value < min) {
+                value = min;
+            } else if(value > max) {
+                value = max;
             }
             
-            return (value-maxValue);
+            return value;
         }
     }
     

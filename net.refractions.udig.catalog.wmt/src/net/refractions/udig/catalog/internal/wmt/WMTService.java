@@ -12,6 +12,7 @@ import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.IService;
 import net.refractions.udig.catalog.IServiceInfo;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSourceFactory;
 import net.refractions.udig.core.internal.CorePlugin;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -72,23 +73,16 @@ public class WMTService extends IService {
             synchronized (this) {
                 if (source == null) {
                     try {
-                        /*
-                         * Strip out the start of the url:
-                         * 
-                         * wmt:///localhost/wmt/net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource
-                         * -->
-                         * net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource
-                         */
-                        String className = url.toString().replace(ID, ""); //$NON-NLS-1$
-                        source = (WMTSource) Class.forName(className).newInstance();
-                        source.setWmtService(this);
+                        
+                        source = WMTSourceFactory.createSource(this, url, params);       
                     } catch(Throwable t) {
-                        msg = t;
                         source = null;
-                    }                    
+                        msg = t;
+                    }
                 }
             }
         }
+        
         return source;
     }
     
@@ -168,13 +162,13 @@ public class WMTService extends IService {
      * @see net.refractions.udig.catalog.IResolve#getStatus()
      */
     public Status getStatus() {
-        if (msg == null)
-        {
-            return Status.CONNECTED;
-        } else {
+        if (msg != null) {
             return Status.BROKEN;
+        } else if (source == null){
+            return Status.NOTCONNECTED;
+        } else {
+            return Status.CONNECTED;
         }
-        
     }
 
     /*

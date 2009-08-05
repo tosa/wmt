@@ -17,7 +17,7 @@ public abstract class OSMSource extends WMTSource {
     public static String NAME = "OpenStreetMap"; //$NON-NLS-1$
     private static WMTTileFactory tileFactory = new OSMTile.OSMTileFactory();
     
-    public OSMSource() {
+    protected OSMSource() {
         System.out.println(NAME);
         setName(NAME); 
     }

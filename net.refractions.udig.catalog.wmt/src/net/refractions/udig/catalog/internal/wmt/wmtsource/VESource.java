@@ -13,7 +13,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 public class VESource extends WMTSource {
     public static String NAME = "Microsoft Virtual Earth"; //$NON-NLS-1$
     
-    public VESource() {
+    protected VESource() {
         System.out.println("VESource");
         setName(NAME);
     }

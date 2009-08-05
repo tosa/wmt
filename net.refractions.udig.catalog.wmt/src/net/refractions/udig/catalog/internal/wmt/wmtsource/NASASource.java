@@ -1,8 +1,12 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
@@ -11,37 +15,78 @@ import net.refractions.udig.catalog.internal.wmt.tile.NASATile;
 import net.refractions.udig.catalog.internal.wmt.tile.NASATile.NASATileName.NASAZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
 
+import org.jdom.Element;
+
 public class NASASource extends WMTSource {
-    public static String NAME = "Global Mosaic, pan sharpened visual"; //$NON-NLS-1$
+    public static final String KEY_TILEGROUP_NAME = "NASA_TILEGROUP"; //$NON-NLS-1$
     
     private static WMTTileFactory tileFactory = new NASATile.NASATileFactory();
     
-    private List<NASAZoomLevel> zoomLevels;
-    // todo: get them from somewhere
-    private ReferencedEnvelope bounds = new ReferencedEnvelope(-180, 180, -90, 90, DefaultGeographicCRS.WGS84);
+    private ReferencedEnvelope bounds;
+    private String baseUrl;
+
+    private List<NASAZoomLevel> zoomLevels;    
     private double[] scales;
     
-    public NASASource() {
-        System.out.println(NAME);
-        setName(NAME);
-       
-        // create the list of available zoom-levels (Tilepatterns)
-        // later this will be parsed from a xml-file
+    private int tileWidth;
+    private int tileHeight;
+    private String tileFormat;
+    
+    private static final String tileWidthPatternString = "(width=)(\\d*)(&)"; //$NON-NLS-1$
+    private static final String tileHeightPatternString = "(height=)(\\d*)(&)"; //$NON-NLS-1$
+    private static final String tileFormatPatternString = "(format=image/)([a-zA-Z]+)(&)"; //$NON-NLS-1$
+    private static final Pattern tileWidthPattern = Pattern.compile(
+            tileWidthPatternString, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern tileHeightPattern = Pattern.compile(
+            tileHeightPatternString, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern tileFormatPattern = Pattern.compile(
+            tileFormatPatternString, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    
+   
+    protected NASASource() {}
+
+    @Override
+    protected void init(Map<String, Serializable> params) throws Exception {
+        NASASourceManager sourceManager = NASASourceManager.getInstance();
         
+        Element tiledGroup = sourceManager.getTiledGroup(params);
+        String baseUrl = sourceManager.getBaseUrl();        
+        
+        setName(tiledGroup.getChildText("Name")); //$NON-NLS-1$
+        
+        this.baseUrl = baseUrl;
+        
+        String firstTilePattern = tiledGroup.getChild("TilePattern").getValue(); //$NON-NLS-1$
+        
+        setBounds(tiledGroup.getChild("LatLonBoundingBox")); //$NON-NLS-1$
+        setTileSize(firstTilePattern);
+        setTileFormat(firstTilePattern);
+        setZoomLevels(tiledGroup.getChildren("TilePattern"), baseUrl); //$NON-NLS-1$        
+    }
+
+
+
+    private void setZoomLevels(List<?> tilePatterns, String baseUrl) {
         zoomLevels = new ArrayList<NASAZoomLevel>();
-        zoomLevels.add(new NASAZoomLevel("request=GetMap&layers=global_mosaic&srs=EPSG:4326&format=image/jpeg&styles=visual&width=512&height=512&bbox=-180,-38,-52,90", bounds));
-        zoomLevels.add(new NASAZoomLevel("request=GetMap&layers=global_mosaic&srs=EPSG:4326&format=image/jpeg&styles=visual&width=512&height=512&bbox=-180,26,-116,90", bounds));
-        zoomLevels.add(new NASAZoomLevel("request=GetMap&layers=global_mosaic&srs=EPSG:4326&format=image/jpeg&styles=visual&width=512&height=512&bbox=-180,58,-148,90", bounds));
-        zoomLevels.add(new NASAZoomLevel("request=GetMap&layers=global_mosaic&srs=EPSG:4326&format=image/jpeg&styles=visual&width=512&height=512&bbox=-180,74,-164,90", bounds));
-        zoomLevels.add(new NASAZoomLevel("request=GetMap&layers=global_mosaic&srs=EPSG:4326&format=image/jpeg&styles=visual&width=512&height=512&bbox=-180,82,-172,90", bounds));
-        zoomLevels.add(new NASAZoomLevel("request=GetMap&layers=global_mosaic&srs=EPSG:4326&format=image/jpeg&styles=visual&width=512&height=512&bbox=-180,86,-176,90", bounds));
-        zoomLevels.add(new NASAZoomLevel("request=GetMap&layers=global_mosaic&srs=EPSG:4326&format=image/jpeg&styles=visual&width=512&height=512&bbox=-180,88,-178,90", bounds));
-        zoomLevels.add(new NASAZoomLevel("request=GetMap&layers=global_mosaic&srs=EPSG:4326&format=image/jpeg&styles=visual&width=512&height=512&bbox=-180,89,-179,90", bounds));
-        zoomLevels.add(new NASAZoomLevel("request=GetMap&layers=global_mosaic&srs=EPSG:4326&format=image/jpeg&styles=visual&width=512&height=512&bbox=-180,89.5,-179.5,90", bounds));
-        zoomLevels.add(new NASAZoomLevel("request=GetMap&layers=global_mosaic&srs=EPSG:4326&format=image/jpeg&styles=visual&width=512&height=512&bbox=-180,89.75,-179.75,90", bounds));
-        zoomLevels.add(new NASAZoomLevel("request=GetMap&layers=global_mosaic&srs=EPSG:4326&format=image/jpeg&styles=visual&width=512&height=512&bbox=-180,89.875,-179.875,90", bounds));
-        zoomLevels.add(new NASAZoomLevel("request=GetMap&layers=global_mosaic&srs=EPSG:4326&format=image/jpeg&styles=visual&width=512&height=512&bbox=-180,89.9375,-179.9375,90", bounds));
         
+        for(Object element : tilePatterns) {
+            if (element instanceof Element) {
+                Element tilePattern = (Element) element;
+                String tilePatternText = tilePattern.getValue();
+                NASAZoomLevel zoomLevel = new NASAZoomLevel(tilePatternText, this);
+                
+                System.out.println("Zoom-Level " + zoomLevel.getScale() + " " + zoomLevel.getWidthInWorldUnits());
+                
+                zoomLevels.add(zoomLevel);
+            }
+        }
+        
+        generateScaleList();       
+    }
+
+    private void generateScaleList() {
+        // first: sort the zoom-level list, so that low scales (high numbers)
+        // are at top of the list
         Collections.sort(zoomLevels);
         Collections.reverse(zoomLevels);
         
@@ -51,12 +96,71 @@ public class NASASource extends WMTSource {
             zoomLevels.get(i).setZoomLevel(i);
             
             scales[i] = zoomLevels.get(i).getScale();
+        }     
+    }
+    
+    private void setBounds(Element latLonBoundingBox) {
+        try {
+            double minX = latLonBoundingBox.getAttribute("minx").getDoubleValue(); //$NON-NLS-1$
+            double maxX = latLonBoundingBox.getAttribute("maxx").getDoubleValue(); //$NON-NLS-1$
+            double minY = latLonBoundingBox.getAttribute("miny").getDoubleValue(); //$NON-NLS-1$
+            double maxY = latLonBoundingBox.getAttribute("maxy").getDoubleValue(); //$NON-NLS-1$
+            
+            bounds = new ReferencedEnvelope(minX, maxX, minY, maxY, DefaultGeographicCRS.WGS84);            
+        } catch(Exception exc) {
+            bounds = new ReferencedEnvelope(-180, 180, -90, 90, DefaultGeographicCRS.WGS84);
         }
+        System.out.println(bounds);
+    }
+    
+    /**
+     * Gets the tile-size from the first tile-pattern.
+     * 
+     *
+     * @param tilePattern
+     */
+    private void setTileSize(String tilePattern) {
+        Matcher mWidth = tileWidthPattern.matcher(tilePattern);
+        Matcher mHeight = tileHeightPattern.matcher(tilePattern);
+        
+        if (mWidth.find() && mHeight.find()) {
+            String widthText = mWidth.group(2);
+            String heightText = mHeight.group(2);
+            
+            try{
+                int width = Integer.parseInt(widthText);
+                int height = Integer.parseInt(heightText);
+                
+                tileWidth = width;
+                tileHeight = height;
+                
+                return;
+            } catch(Exception exc) {}
+        }
+        
+        tileWidth = 512;
+        tileHeight = 512;
+    }
+    
+    /**
+     * Get the image format from the first tile-pattern.
+     *
+     * @param tilePattern
+     */
+    private void setTileFormat(String tilePattern) {
+        Matcher matcher = tileFormatPattern.matcher(tilePattern);
+        
+        String format = "jpeg"; //$NON-NLS-1$
+        if (matcher.find()) {
+            format = matcher.group(2);
+        }
+        
+        tileFormat = format;
     }
     
     @Override
     public String getFileFormat() {
-        return "jpeg"; //$NON-NLS-1$
+        return tileFormat; 
     }
 
     @Override
@@ -67,22 +171,28 @@ public class NASASource extends WMTSource {
     public NASAZoomLevel getZoomLevel(int index) {
         return zoomLevels.get(index);
     }
+
+    @Override
+    public ReferencedEnvelope getBounds() {
+        return bounds;
+    }
     
     @Override
     public WMTTileFactory getTileFactory() {
         return tileFactory;
     }
 
-    // todo: get this from somewhere
     @Override
     public int getTileHeight() {
-        return super.getTileHeight();
+        return tileHeight;
     }
 
-    // todo: get this from somewhere
     @Override
     public int getTileWidth() {
-        return super.getTileWidth();
+        return tileWidth;
     }
 
+    public String getBaseUrl(){
+        return baseUrl;
+    }
 }

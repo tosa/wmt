@@ -11,7 +11,7 @@ import org.geotools.geometry.jts.ReferencedEnvelope;
 public class YMISource extends WMTSource {
     public static String NAME = "Yahoo! Map Image"; //$NON-NLS-1$
 
-    public YMISource() {
+    protected YMISource() {
         System.out.println(NAME);
         setName(NAME); 
     }

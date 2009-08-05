@@ -6,7 +6,7 @@ import java.util.Arrays;
 public class OSMOsmarenderSource extends OSMSource {
     public static String NAME = "Osmarender"; //$NON-NLS-1$
     
-    public OSMOsmarenderSource() {
+    protected OSMOsmarenderSource() {
         System.out.println(NAME);
         setName(NAME); 
     }

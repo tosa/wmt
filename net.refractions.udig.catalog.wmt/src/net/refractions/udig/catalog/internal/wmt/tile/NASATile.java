@@ -53,11 +53,11 @@ public class NASATile extends WMTTile {
     }
     
     public static double tile2lat(int row, NASATileName tileName) {       
-        return 90 - row * tileName.getHeightInWorldUnits();     
+        return tileName.getNasaSource().getBounds().getMaxY() - row * tileName.getHeightInWorldUnits();     
     }
     
     public static double tile2lon(int col, NASATileName tileName) { 
-        return -180 + col * tileName.getWidthInWorldUnits();            
+        return tileName.getNasaSource().getBounds().getMinX() + col * tileName.getWidthInWorldUnits();            
     }
 
     //endregion
@@ -86,14 +86,21 @@ public class NASATile extends WMTTile {
          */
         public NASATile getTileFromCoordinate(double lat, double lon, 
                 WMTZoomLevel zoomLevel, WMTSource wmtSource) {
+            NASASource nasaSource = (NASASource) wmtSource;
+            
             // normalize latitude and longitude
             lat = WMTTileFactory.normalizeDegreeValue(lat, 90);
             lon = WMTTileFactory.normalizeDegreeValue(lon, 180);
 
+            lat = WMTTileFactory.moveInRange(lat, 
+                    nasaSource.getBounds().getMinY(), nasaSource.getBounds().getMaxY());
+            lon = WMTTileFactory.moveInRange(lon, 
+                    nasaSource.getBounds().getMinX(), nasaSource.getBounds().getMaxX());
+            
             NASAZoomLevel nasaZoomLevel = (NASAZoomLevel) zoomLevel;
             
-            int row = (int) Math.abs((lat - 90)  / nasaZoomLevel.getHeightInWorldUnits());
-            int col = (int) Math.abs((lon + 180) / nasaZoomLevel.getWidthInWorldUnits());
+            int row = (int) Math.abs((lat - nasaSource.getBounds().getMaxY())  / nasaZoomLevel.getHeightInWorldUnits());
+            int col = (int) Math.abs((lon - nasaSource.getBounds().getMinX()) / nasaZoomLevel.getWidthInWorldUnits());
             
             return new NASATile(col, row, nasaZoomLevel, (NASASource) wmtSource);
         }
@@ -168,6 +175,10 @@ public class NASATile extends WMTTile {
             return zoomLevel.getHeightInWorldUnits();
         }
         
+        public NASASource getNasaSource() {
+            return nasaSource;
+        }
+        
         public String toString() {
             return zoomLevel.getZoomLevel() + "/" + getX() + "/" + getY(); //$NON-NLS-1$ //$NON-NLS-2$
         }
@@ -191,13 +202,12 @@ public class NASATile extends WMTTile {
          */
         public static class NASAZoomLevel extends WMTZoomLevel implements Comparable<NASAZoomLevel>{
                 private ReferencedEnvelope boundsOfFirstTile;
-                private ReferencedEnvelope tiledGroupBounds;
                 private String requestUrlPrefix;
                 private String requestUrlSuffix;
                 private DecimalFormat boundsFormatter;
                 private double scale;
                 
-                private String baseUrl = "http://onearth.jpl.nasa.gov/wms.cgi?"; //todo: get this from somewhere
+                private NASASource nasaSource;
                 
                 private static final char BOUNDS_SEPERATOR = ',';
                 private static final String doublePatternString = "([+-]?\\d*\\.?\\d*)(?![-+0-9\\.])"; //$NON-NLS-1$
@@ -209,10 +219,10 @@ public class NASATile extends WMTTile {
                         bboxPatternString, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
                 
                 
-            public NASAZoomLevel(String tilePattern, ReferencedEnvelope tiledGroupBounds) {
+            public NASAZoomLevel(String tilePattern, NASASource nasaSource) {
                 super(0);
                 
-                this.tiledGroupBounds = tiledGroupBounds;
+                this.nasaSource = nasaSource;
                 
                 String rawRequest = getRawRequestStringFromTilePattern(tilePattern);
                 parseBboxFromRequest(rawRequest);
@@ -228,7 +238,7 @@ public class NASATile extends WMTTile {
             public String getTileUrl(ReferencedEnvelope bounds) {
                 StringBuffer bbox = new StringBuffer();
                 
-                bbox.append(baseUrl);
+                bbox.append(nasaSource.getBaseUrl());
                 bbox.append(requestUrlPrefix);
                 bbox.append("bbox="); //$NON-NLS-1$
                 bbox.append(getFormattedCoordinate(bounds.getMinX()));
@@ -258,11 +268,13 @@ public class NASATile extends WMTTile {
              * @return
              */
             private String getRawRequestStringFromTilePattern(String tilePattern) {
-               if (tilePattern.contains(" ")) { //$NON-NLS-1$
-                   return tilePattern.substring(0, tilePattern.indexOf(' ') );
-               }
+                tilePattern = tilePattern.replace('\n', ' ').trim();
+                
+                if (tilePattern.contains(" ")) { //$NON-NLS-1$
+                    return tilePattern.substring(0, tilePattern.indexOf(' ') );
+                }
                
-               return tilePattern;
+                return tilePattern;
             }
             
             /**
@@ -309,7 +321,7 @@ public class NASATile extends WMTTile {
                                 xMax,
                                 yMin,
                                 yMax,
-                                DefaultGeographicCRS.WGS84 // todo: get this from somewhere
+                                DefaultGeographicCRS.WGS84
                         );
                         
                         return;
@@ -389,10 +401,23 @@ public class NASATile extends WMTTile {
             private void findOutScale() {
                 if (boundsOfFirstTile == null) {
                     scale = Double.NaN;
-                } else {
-                    scale = ScaleUtils.calculateScaleDenominator(boundsOfFirstTile, 
-                                new Dimension(512, 512), // todo: get from somewhere
-                                Display.getDefault().getDPI().x);
+                } else {                    
+                    // We are building a envelope at (0/0) with the size of the first tile
+                    // to calculate the scale
+                    double halfWidth = boundsOfFirstTile.getWidth() / 2.0;
+                    double halfHeight = boundsOfFirstTile.getHeight() / 2.0;
+                    
+                    ReferencedEnvelope boundsAtEquator = new ReferencedEnvelope(-halfWidth, halfWidth, 
+                            -halfHeight, halfHeight, DefaultGeographicCRS.WGS84);
+                                        
+                    int dpi = 96;
+                    try{
+                        dpi = Display.getDefault().getDPI().x;
+                    }catch(Exception exc){}
+                    
+                    scale = ScaleUtils.calculateScaleDenominator(boundsAtEquator, 
+                                new Dimension(nasaSource.getTileWidth(), nasaSource.getTileHeight()),
+                                dpi);
                 }
             }
             
@@ -401,14 +426,14 @@ public class NASATile extends WMTTile {
             public int calculateMaxTilePerColNumber(int zoomLevel) {
                 if (boundsOfFirstTile == null) return 0;
 
-                return (int) Math.ceil(tiledGroupBounds.getHeight() / boundsOfFirstTile.getHeight());
+                return (int) Math.ceil(nasaSource.getBounds().getHeight() / boundsOfFirstTile.getHeight());
             }
 
             @Override
             public int calculateMaxTilePerRowNumber(int zoomLevel) {
                 if (boundsOfFirstTile == null) return 0;
                 
-                return (int) Math.ceil(tiledGroupBounds.getWidth() / boundsOfFirstTile.getWidth());
+                return (int) Math.ceil(nasaSource.getBounds().getWidth() / boundsOfFirstTile.getWidth());
             } 
 
             public double getScale() {

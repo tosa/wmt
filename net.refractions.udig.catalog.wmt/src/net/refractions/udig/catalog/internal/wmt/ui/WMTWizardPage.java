@@ -10,6 +10,7 @@ import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.WMTServiceExtension;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASourceManager;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMCycleMapSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMMapnikSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMOsmarenderSource;
@@ -190,11 +191,13 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         mq.setExpanded(true);
         //endregion
         
-        //region Add MapQuest services
+        //region Add NASA services
         TreeItem nasa = new TreeItem(tree, SWT.NONE);
         nasa.setText("NASA");
-
-        addWMTSourceToTree(nasa, NASASource.class);
+        
+        NASASourceManager nasaManager = NASASourceManager.getInstance();
+        
+        nasaManager.buildWizardTree(nasa);
 
         nasa.setExpanded(true);
         //endregion

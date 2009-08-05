@@ -4,8 +4,11 @@ import junit.framework.TestCase;
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile;
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName;
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName.OSMZoomLevel;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMMapnikSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSourceFactory;
 
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
@@ -19,7 +22,7 @@ import com.vividsolutions.jts.geom.Coordinate;
 public class OSMTileTest extends TestCase{
 
     public void testGetTileFromCoordinate() {
-        OSMSource osmSource = new OSMMapnikSource();
+        OSMSource osmSource = (OSMMapnikSource) WMTSourceFactory.createSource(null, WMTSource.getRelatedServiceUrl(OSMMapnikSource.class), null, true);
         
         OSMTile tile = (OSMTile) osmSource.getTileFactory().getTileFromCoordinate(49.38052, 6.55268, new OSMZoomLevel(6), osmSource);
         
@@ -27,7 +30,7 @@ public class OSMTileTest extends TestCase{
     }
     
     public void testGetTileFromCoordinateLatitude() {
-        OSMSource osmSource = new OSMMapnikSource();
+        OSMSource osmSource = (OSMMapnikSource) WMTSourceFactory.createSource(null, WMTSource.getRelatedServiceUrl(OSMMapnikSource.class), null, true);
         
         OSMTile tile = (OSMTile) osmSource.getTileFactory().getTileFromCoordinate(85.33499182341461, -103.68507972493057, new OSMZoomLevel(0), osmSource);
         
@@ -80,7 +83,7 @@ public class OSMTileTest extends TestCase{
     
     //todo: remove
     public void testYahooTry() {
-        OSMSource osmSource = new OSMMapnikSource();
+        OSMSource osmSource = (OSMMapnikSource) WMTSourceFactory.createSource(null, WMTSource.getRelatedServiceUrl(OSMMapnikSource.class), null, true);
 
         OSMTile tile = (OSMTile) osmSource.getTileFactory().getTileFromCoordinate(84, -170, new OSMZoomLevel(3), osmSource);
         //OSMTile tile = OSMTile.getTileFromCoordinate(49.56474, 6.36812220, new OSMZoomLevel(17), osmSource);

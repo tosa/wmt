@@ -34,6 +34,14 @@ public class WMTServiceExtension implements ServiceExtension {
         return null;
     }
     
+    public WMTService createService(Map<String,Serializable> params) {
+        if (params != null && params.containsKey(KEY)) {
+            return createService((URL) params.get(WMTServiceExtension.KEY), params);
+        }
+        
+        return null;
+    }
+    
     /**
      * Get service from WMTSource-Class
      * 
@@ -44,7 +52,7 @@ public class WMTServiceExtension implements ServiceExtension {
      * @return
      */
     public WMTService createService(Class<? extends WMTSource> sourceClass) {
-        URL url = OSMSource.getRelatedServiceUrl(sourceClass);        
+        URL url = WMTSource.getRelatedServiceUrl(sourceClass);        
         WMTService service = createService(null, createParams(url));
         
         return service;        
@@ -68,5 +76,6 @@ public class WMTServiceExtension implements ServiceExtension {
         }
         
         return null;
-    }    
+    } 
+    
 }

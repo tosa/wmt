@@ -3,7 +3,7 @@ package net.refractions.udig.catalog.internal.wmt.wmtsource;
 public class OSMCycleMapSource extends OSMSource {
     public static String NAME = "Cycle Map"; //$NON-NLS-1$
     
-    public OSMCycleMapSource() {
+    protected OSMCycleMapSource() {
         System.out.println(NAME);
         setName(NAME); 
     }
