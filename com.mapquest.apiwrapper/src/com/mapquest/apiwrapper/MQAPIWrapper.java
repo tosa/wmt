@@ -1,5 +1,6 @@
 package com.mapquest.apiwrapper;
 
+import com.mapquest.DisplayState;
 import com.mapquest.Exec;
 import com.mapquest.LatLng;
 import com.mapquest.MapState;
@@ -36,10 +37,7 @@ public class MQAPIWrapper {
         Session mqSession = new Session();            
         mqSession.addOne(mapState);
         
-        // create a new MapQuest session on the server
-        String sessionId = mapClient.createSessionEx(mqSession);
-        
         // client-based call which creates the url
-        return mapClient.getMapFromSessionURL(sessionId);
+        return mapClient.getMapDirectURLEx(mqSession,  new DisplayState());
     }
 }
