@@ -13,6 +13,7 @@ import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.jdom.Element;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 /**
  * This class represents one TiledGroup
@@ -215,5 +216,9 @@ public class NASASource extends WMTSource {
 
     public String getBaseUrl(){
         return baseUrl;
+    }
+    
+    public CoordinateReferenceSystem getProjectedTileCrs() {
+        return DefaultGeographicCRS.WGS84;
     }
 }
