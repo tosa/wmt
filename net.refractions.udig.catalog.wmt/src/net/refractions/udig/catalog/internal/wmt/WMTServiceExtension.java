@@ -17,7 +17,7 @@ public class WMTServiceExtension implements ServiceExtension {
      */
     public WMTService createService(URL id, Map<String,Serializable> params) {
         System.out.println("WMTServiceExtension.createService");//$NON-NLS-1$
-        if (id == null || params == null)
+        if (params == null)
             return null;
         
         if( params.containsKey(KEY)){
