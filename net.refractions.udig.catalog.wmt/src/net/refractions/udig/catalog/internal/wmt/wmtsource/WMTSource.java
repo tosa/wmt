@@ -49,7 +49,7 @@ public abstract class WMTSource {
     
     protected WMTSource() {}
     
-    protected void init(Map<String, Serializable> params) throws Exception {}
+    protected void init(String resourceId) throws Exception {}
     
     public void setName(String name) {
         this.name = name;
@@ -190,7 +190,7 @@ public abstract class WMTSource {
         URL url;
         
         try {
-            url = new URL(null, WMTService.SERVICE_URL.toString() + sourceClass.getName(), CorePlugin.RELAXED_HANDLER);
+            url = new URL(null, WMTService.ID + sourceClass.getName(), CorePlugin.RELAXED_HANDLER);
         }
         catch(MalformedURLException exc) {
             url = null;

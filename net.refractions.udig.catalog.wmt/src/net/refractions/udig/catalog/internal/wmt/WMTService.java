@@ -5,12 +5,15 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.IService;
 import net.refractions.udig.catalog.IServiceInfo;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASourceManager;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSourceFactory;
 import net.refractions.udig.core.internal.CorePlugin;
@@ -32,32 +35,11 @@ public class WMTService extends IService {
     public static String KEY_PROPERTY_ZOOM_LEVEL_SELECTION_AUTOMATIC = "PROPERTY_ZOOM_LEVEL_SELECTION_AUTOMATIC"; //$NON-NLS-1$
     public static String KEY_PROPERTY_ZOOM_LEVEL_VALUE = "PROPERTY_ZOOM_LEVEL_VALUE"; //$NON-NLS-1$
         
-    /** Dummy url for a WMT
-     * (static block because URL constructor can throw exception 
-     */
-    public final static URL SERVICE_URL;
-    static {
-        URL tmp;
-        try {
-            tmp = new URL(null, ID , CorePlugin.RELAXED_HANDLER);
-        } catch (MalformedURLException e) {
-            tmp=null;
-            e.printStackTrace();
-        }
-        SERVICE_URL=tmp;
-    }
-
-    /** MapGraphic resource children * */
+    /** Related geo-resources * */
     private volatile List<IGeoResource> members;
     
     private Map<String, Serializable> params;
-    private URL url;
-    
-    /* Class which represents the WMT service */
-    private WMTSource source;
-    
-    private Throwable msg;
-    
+    private URL url;    
 
     public WMTService(Map<String, Serializable> params) {
         System.out.println("WMTService");
@@ -67,25 +49,25 @@ public class WMTService extends IService {
             this.url = (URL) params.get(WMTServiceExtension.KEY);
         }
     }
-
-    public WMTSource getSource(){
-        if (source == null) {
-            synchronized (this) {
-                if (source == null) {
-                    try {
-                        
-                        source = WMTSourceFactory.createSource(this, url, params);       
-                    } catch(Throwable t) {
-                        source = null;
-                        msg = t;
-                    }
-                }
-            }
-        }
-        
-        return source;
-    }
     
+    /**
+     * Returns the WMTSouce name of the first WMTGeoResource
+     *
+     * @return
+     */
+    public String getName() {
+        try{
+            List<IGeoResource> resources = resources(null);
+            
+            if (resources.size() > 0) {
+                WMTGeoResource wmtResource = (WMTGeoResource) resources.get(0);
+                
+                return wmtResource.getSource().getName();
+            }
+        } catch(Exception exc) {}
+        
+        return null;
+    }
     
     /*
      * @see net.refractions.udig.catalog.IService#resolve(java.lang.Class,
@@ -101,9 +83,9 @@ public class WMTService extends IService {
         if (adaptee == null) {
             throw new NullPointerException("No adaptor specified" ); //$NON-NLS-1$
         }        
-        if (adaptee.isAssignableFrom(WMTSource.class)) {
-            return adaptee.cast(getSource());
-        }
+//        if (adaptee.isAssignableFrom(WMTSource.class)) {
+//            return adaptee.cast(getSource());
+//        }
 
         return super.resolve(adaptee, monitor);
     }
@@ -124,21 +106,33 @@ public class WMTService extends IService {
      * @see net.refractions.udig.catalog.IService#members(org.eclipse.core.runtime.IProgressMonitor)
      */
     @Override
-    public List<IGeoResource> resources( IProgressMonitor monitor ) throws IOException {
-
+    public List<IGeoResource> resources(IProgressMonitor monitor) throws IOException {
         if (members == null) {
             synchronized (this) {
                 if (members == null) {
-                    members = Collections.singletonList((IGeoResource) new WMTGeoResource(this));
-                    
+                    if (WMTSourceFactory.getClassFromUrl(
+                            getIdentifier()).equals(NASASource.class.getCanonicalName())) {
+                        members = new LinkedList<IGeoResource>();
+                        
+                        NASASourceManager sourceManager = NASASourceManager.getInstance();
+                        sourceManager.buildGeoResources(this, members);                        
+                    } else {                     
+                        return Collections.singletonList(
+                                (IGeoResource) new WMTGeoResource(this, WMTGeoResource.DEFAULT_ID));
+                    }
                 }
             }
         }
         
-
         return members;
     }
-
+    
+    public List<IGeoResource> emptyResourcesList(IProgressMonitor monitor) throws IOException {
+        members = new LinkedList<IGeoResource>();
+        
+        return members;
+    }
+    
     /*
      * @see net.refractions.udig.catalog.IService#getConnectionParams()
      */
@@ -153,29 +147,23 @@ public class WMTService extends IService {
     public <T> boolean canResolve( Class<T> adaptee ) {
         System.out.println("WMTService.canResolve");
         
-        return adaptee != null
-                && (adaptee.isAssignableFrom(WMTSource.class)
-                        || super.canResolve(adaptee));
+        return //(adaptee != null
+               // && (adaptee.isAssignableFrom(WMTSource.class)) ||
+                        super.canResolve(adaptee);
     }
 
     /*
      * @see net.refractions.udig.catalog.IResolve#getStatus()
      */
     public Status getStatus() {
-        if (msg != null) {
-            return Status.BROKEN;
-        } else if (source == null){
-            return Status.NOTCONNECTED;
-        } else {
-            return Status.CONNECTED;
-        }
+        return Status.CONNECTED;
     }
 
     /*
      * @see net.refractions.udig.catalog.IResolve#getMessage()
      */
     public Throwable getMessage() {
-        return msg;
+        return null;
     }
 
     /*

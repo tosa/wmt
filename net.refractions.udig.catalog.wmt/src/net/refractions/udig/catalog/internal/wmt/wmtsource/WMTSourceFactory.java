@@ -1,8 +1,6 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
-import java.io.Serializable;
 import java.net.URL;
-import java.util.Map;
 
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 
@@ -10,31 +8,38 @@ public class WMTSourceFactory {
     
     // todo: make every WMTSource class singleton, so that the cache is reused!
     public static WMTSource createSource(WMTService service, URL url, 
-            Map<String, Serializable> params) throws Throwable {
+            String resourceId) throws Throwable {
         WMTSource source;
                 
-        /*
-         * Strip out the start of the url:
-         * 
-         * wmt:///localhost/wmt/net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource
-         * -->
-         * net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource
-         */
-        String className = url.toString().replace(WMTService.ID, ""); //$NON-NLS-1$
+        String className = getClassFromUrl(url);
         source = (WMTSource) Class.forName(className).newInstance();
         
-        source.init(params);
+        source.init(resourceId);
         source.setWmtService(service);
 
         return source;
     }
     
+    /**
+     * Strip out the start of the url:
+     * 
+     * wmt:///localhost/wmt/net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource
+     *  -->
+     *  net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource 
+     *
+     * @param url
+     * @return
+     */
+    public static String getClassFromUrl(URL url) {
+        return url.toString().replace(WMTService.ID, ""); //$NON-NLS-1$
+    }
+    
     public static WMTSource createSource(WMTService service, URL url, 
-            Map<String, Serializable> params, boolean noException) {
+            String resourceId, boolean noException) {
         WMTSource source;
         
         try{
-            source = createSource(service, url, params);
+            source = createSource(service, url, resourceId);
         } catch (Throwable exc) {
             source = null;
         }

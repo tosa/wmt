@@ -6,24 +6,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.refractions.udig.catalog.ServiceExtension;
-import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 
 public class WMTServiceExtension implements ServiceExtension {
     
 	public static final String KEY = "net.refractions.udig.catalog.internal.wmt.url"; //$NON-NLS-1$
 	
-    /**
-     * TODO summary sentence for createService ...
-     * 
+    /*
      * @see net.refractions.udig.catalog.ServiceExtension#createService(java.net.URL, java.util.Map)
-     * @param id
-     * @param params
-     * @return
      */
-    public WMTService createService( URL id, Map<String,Serializable> params ) {
+    public WMTService createService(URL id, Map<String,Serializable> params) {
         System.out.println("WMTServiceExtension.createService");//$NON-NLS-1$
-        if (params == null)
+        if (id == null || params == null)
             return null;
         
         if( params.containsKey(KEY)){
@@ -34,6 +28,12 @@ public class WMTServiceExtension implements ServiceExtension {
         return null;
     }
     
+    /**
+     * Creates a WMTService from params by extracting the service-url.
+     *
+     * @param params
+     * @return
+     */
     public WMTService createService(Map<String,Serializable> params) {
         if (params != null && params.containsKey(KEY)) {
             return createService((URL) params.get(WMTServiceExtension.KEY), params);
@@ -58,17 +58,13 @@ public class WMTServiceExtension implements ServiceExtension {
         return service;        
     }
 
-    /**
-     * TODO summary sentence for createParams ...
-     * 
+    /*
      * @see net.refractions.udig.catalog.ServiceExtension#createParams(java.net.URL)
-     * @param url
-     * @return
      */
-    public Map<String,Serializable> createParams( URL url ) {
+    public Map<String,Serializable> createParams(URL url) {
         System.out.println("createParams");//$NON-NLS-1$
         //todo: check if the class exists?
-        if( url != null && url.toExternalForm().startsWith( WMTService.SERVICE_URL.toExternalForm())){
+        if (url != null && url.toExternalForm().startsWith(WMTService.ID)){
             Map<String,Serializable> map = new HashMap<String,Serializable>();
             map.put(KEY, url);
             

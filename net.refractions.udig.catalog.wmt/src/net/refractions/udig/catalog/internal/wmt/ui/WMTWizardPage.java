@@ -4,8 +4,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 
+import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.IService;
+import net.refractions.udig.catalog.internal.wmt.WMTGeoResource;
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.WMTServiceExtension;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
@@ -57,12 +60,6 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
     }
 
     @Override
-    public Collection<URL> getResourceIDs() {
-        System.out.println("Collection<URL> getResourceIDs()");
-        return super.getResourceIDs();
-    }
-
-    @Override
     public boolean leavingPage() {
         System.out.println("leavingPage");
         
@@ -85,6 +82,60 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         return super.leavingPage();
     }
 
+    //region Get selected GeoResources/Services
+    //region GeoResources
+    /**
+     * Builds a list of all selected GeoResources
+     */
+    @Override
+    public Collection<URL> getResourceIDs() {        
+        Collection<URL> resourceIDs = new LinkedList<URL>();        
+        getSelectedResources(resourceIDs, tree);
+        
+        return resourceIDs;
+    }
+    
+    /**
+     * Loops the Tree-View for selected GeoResources
+     *
+     * @param resourceIDs
+     * @param tree
+     */
+    private void getSelectedResources(Collection<URL> resourceIDs, Tree tree) {
+        for (int i = 0; i < tree.getItemCount(); i++) {
+            TreeItem treeItem = tree.getItem(i);
+            
+            if (treeItem.getChecked() || treeItem.getGrayed()) {
+                getSelectedResources(resourceIDs, treeItem);
+            }
+        }
+    }
+    
+    /**
+     * Loops a TreeItem for selected GeoResources
+     *
+     * @param resourceIDs
+     * @param treeItem Selected TreeItem
+     */
+    private void getSelectedResources(Collection<URL> resourceIDs, TreeItem treeItem) {
+        if(treeItem.getData() instanceof IGeoResource) {
+            WMTGeoResource geoResource = (WMTGeoResource) treeItem.getData();
+            
+            resourceIDs.add(geoResource.getIdentifier());
+        }
+        
+
+        for (int i = 0; i < treeItem.getItemCount(); i++) {
+            TreeItem childItem = treeItem.getItem(i);
+            
+            if (childItem.getChecked() || childItem.getGrayed()) {
+                getSelectedResources(resourceIDs, childItem);
+            }
+        }
+    }
+    //endregion
+    
+    //region Services
     /**
      * Loops the tree and returns selected services.
      */
@@ -102,24 +153,33 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
              * or grayed (which means that not all children are checked)
              */
             if (parentItem.getChecked() || parentItem.getGrayed()) {
+                addItemData(services, parentItem.getData());
+                
                 for (int j = 0; j < parentItem.getItemCount(); j++) {
                     TreeItem childItem = parentItem.getItem(j);
                     
-                    if (childItem.getChecked() && childItem.getData() != null) {
-                        IService service = (IService) childItem.getData();
-                        System.out.println(service.getTitle());
-                        
-                        services.add(service);
-                    }
-                    
+                    if (childItem.getChecked()) {
+                        addItemData(services, childItem.getData());
+                    }                    
                 }
                 
             }
-        }
+        }        
         
         return services;
     }
-
+    
+    private void addItemData(Collection<IService> services, Object data) {
+        if (data instanceof IService) {
+            IService service = (IService) data;
+            System.out.println(service.getTitle());
+            
+            services.add(service);
+        }
+    }
+    //endregion
+    
+    //region Adding Services to the Tree-View
     /**
      * Creates a service from a given WMTSource class,
      * adds this service to a new TreeItem as data object
@@ -133,9 +193,10 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         
         WMTService service = serviceExtension.createService(sourceClass);
         
-        newTreeItem.setText(service.getSource().getName());
+        newTreeItem.setText(service.getName());
         newTreeItem.setData(service);
     }
+    //endregion
     
     public void createControl( Composite parent ) {
         System.out.println("createControl");

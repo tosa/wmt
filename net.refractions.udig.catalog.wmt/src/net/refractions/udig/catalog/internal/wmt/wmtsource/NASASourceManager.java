@@ -1,11 +1,11 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
-import java.io.Serializable;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.List;
-import java.util.Map;
 
+import net.refractions.udig.catalog.IGeoResource;
+import net.refractions.udig.catalog.internal.wmt.WMTGeoResource;
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.WMTServiceExtension;
 
@@ -17,6 +17,14 @@ import org.jdom.Element;
 import org.jdom.Namespace;
 import org.jdom.input.SAXBuilder;
 
+/**
+ * Manages the access on the NASA TiledGroups configuration file 
+ * see http://onearth.jpl.nasa.gov/wms.cgi?request=GetTileService
+ * and http://onearth.jpl.nasa.gov/tiled.html
+ * 
+ * @author to.srwn
+ * @since 1.1.0
+ */
 public class NASASourceManager {
     private static final String TILESERVICE_FILE = "NASA-GetTileService.xml"; //$NON-NLS-1$
     
@@ -36,6 +44,7 @@ public class NASASourceManager {
         serviceExtension = new WMTServiceExtension();
         
         try{
+            // open file
             URL url = NASASource.class.getResource(TILESERVICE_FILE);
             
             SAXBuilder builder = new SAXBuilder(false); 
@@ -50,13 +59,38 @@ public class NASASourceManager {
         }
     }
     
-    public void buildWizardTree(TreeItem treeItem) {
-        List<?> tiledGroups = tiledPatterns.getChildren("TiledGroup"); //$NON-NLS-1$
+    /**
+     * Returns the prefix for the request: http://wms.jpl.nasa.gov/wms.cgi?
+     *
+     * @return
+     */
+    public String getBaseUrl() {
+        Element onlineResource = tiledPatterns.getChild("OnlineResource"); //$NON-NLS-1$
+        Namespace xlink = onlineResource.getNamespace("xlink"); //$NON-NLS-1$
+        Attribute href = onlineResource.getAttribute("href", xlink); //$NON-NLS-1$        
+        String baseUrl = href.getValue();
         
-        buildWizardTreeFromTiledGroups(treeItem, tiledGroups, ""); //$NON-NLS-1$
+        return baseUrl;
     }
     
-    private void buildWizardTreeFromTiledGroups(TreeItem treeItem, List<?> tiledGroups, String groupNames) {
+    //region Build TreeItem for Wizard
+    public void buildWizardTree(TreeItem treeItem) {
+        try {
+            List<?> tiledGroups = tiledPatterns.getChildren("TiledGroup"); //$NON-NLS-1$
+            
+            WMTService service = serviceExtension.createService(NASASource.class);
+            List<IGeoResource> geoResources = service.emptyResourcesList(null);
+            geoResources.clear();
+            
+            treeItem.setData(service);
+            
+            buildWizardTreeFromTiledGroups(service, geoResources, treeItem, tiledGroups, ""); //$NON-NLS-1$
+        } catch(Exception exc) {
+            // todo: something failed, log
+        }
+    }
+    
+    private void buildWizardTreeFromTiledGroups(WMTService service, List<IGeoResource> geoResources, TreeItem treeItem, List<?> tiledGroups, String groupNames) {
         for(Object obj : tiledGroups) {
             if (obj instanceof Element) {
                 Element tiledGroup = (Element) obj;
@@ -70,32 +104,62 @@ public class NASASourceManager {
                 if (newTiledGroups.isEmpty()) {
                     TreeItem newTreeItem = new TreeItem(treeItem, SWT.NONE);
                     
-                    Map<String,Serializable> params = buildParams(newGroupNames);
-                    WMTService service = serviceExtension.createService(params);
+                    WMTGeoResource geoResource = new WMTGeoResource(service, newGroupNames);
+                    geoResources.add(geoResource);
                     
                     newTreeItem.setText(newGroupName);
-                    newTreeItem.setData(service);
+                    newTreeItem.setData(geoResource);
                 } else {
                     TreeItem newTreeItem = new TreeItem(treeItem, SWT.NONE);
                     newTreeItem.setText(newGroupName);
                     
-                    buildWizardTreeFromTiledGroups(newTreeItem, newTiledGroups, newGroupNames);
+                    buildWizardTreeFromTiledGroups(service, geoResources, 
+                            newTreeItem, newTiledGroups, newGroupNames);
                 }
             }
         }
     }
+    //endregion
     
-    private Map<String,Serializable> buildParams(String groupName) {
-        Map<String,Serializable> params = serviceExtension.createParams(WMTSource.getRelatedServiceUrl(NASASource.class));
+    //region Build geo-resources list for service
+    public void buildGeoResources(WMTService service, List<IGeoResource> geoResources) {
+        geoResources.clear();    
         
-        params.put(NASASource.KEY_TILEGROUP_NAME, groupName);
-        
-        return params;
+        try {
+            List<?> tiledGroups = tiledPatterns.getChildren("TiledGroup"); //$NON-NLS-1$    
+            
+            buildGeoResourcesFromTiledGroups(service, geoResources, tiledGroups, ""); //$NON-NLS-1$
+        } catch(Exception exc) {
+            // todo: something failed, log
+        }       
     }
+    
+    private void buildGeoResourcesFromTiledGroups(WMTService service, List<IGeoResource> geoResources, List<?> tiledGroups, String groupNames) {
+        for(Object obj : tiledGroups) {
+            if (obj instanceof Element) {
+                Element tiledGroup = (Element) obj;
+                
+                String newGroupName = tiledGroup.getChildText("Name"); //$NON-NLS-1$
+                String newGroupNames = getConcatenatedGroupName(groupNames, newGroupName);
+                
+                List<?> newTiledGroups = tiledGroup.getChildren("TiledGroup"); //$NON-NLS-1$
+                
+                // if there are no sub tile-groups
+                if (newTiledGroups.isEmpty()) {
+                    
+                    WMTGeoResource geoResource = new WMTGeoResource(service, newGroupNames);
+                    geoResources.add(geoResource);
+                } else {                    
+                    buildGeoResourcesFromTiledGroups(service, geoResources, 
+                            newTiledGroups, newGroupNames);
+                }
+            }
+        }        
+    }
+    //endregion
 
-    public Element getTiledGroup(Map<String, Serializable> params) {
-        String tileGroupName = (String) params.get(NASASource.KEY_TILEGROUP_NAME);
-        
+    //region Load the XML TiledGroup element by a given name
+    public Element getTiledGroup(String tileGroupName) {        
         List<?> tiledGroups = tiledPatterns.getChildren("TiledGroup"); //$NON-NLS-1$
         
         return searchTileGroup(tileGroupName, "", tiledGroups); //$NON-NLS-1$
@@ -137,23 +201,23 @@ public class NASASourceManager {
         
         return null;
     }
+    //endregion
     
+    /**
+     * The names for cascaded TileGroups are build by concatenating the several
+     * group names.
+     */
     private String getConcatenatedGroupName(String groupNames, String newGroupName) {
-        newGroupName = newGroupName.replace('|', ' ');
+        /* Replace separator characters
+         * | : separates TiledGroup names
+         * # : separates the service id from the geo-resource id
+         */
+        newGroupName = newGroupName.replace('|', ' ').replace('#', ' ');
         
         if (groupNames.isEmpty()) {
             return newGroupName;
         } else {
             return groupNames + "|" + newGroupName; //$NON-NLS-1$
         }
-    }
-    
-    public String getBaseUrl() {
-        Element onlineResource = tiledPatterns.getChild("OnlineResource"); //$NON-NLS-1$
-        Namespace xlink = onlineResource.getNamespace("xlink"); //$NON-NLS-1$
-        Attribute href = onlineResource.getAttribute("href", xlink); //$NON-NLS-1$        
-        String baseUrl = href.getValue();
-        
-        return baseUrl;
     }
 }

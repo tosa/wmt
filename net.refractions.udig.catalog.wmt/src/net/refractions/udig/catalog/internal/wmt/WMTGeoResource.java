@@ -7,40 +7,64 @@ import java.net.URL;
 import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.IGeoResourceInfo;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
-
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSourceFactory;
 import net.refractions.udig.core.internal.CorePlugin;
-
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 
 
 public class WMTGeoResource extends IGeoResource {
-
-    private WMTSource source;
-    private WMTService wmtService;
     
-    public WMTGeoResource( WMTService service ) {
+    public static final String DEFAULT_ID = "blank"; //$NON-NLS-1$
+
+    private WMTService wmtService;
+    private String resourceId;
+    
+    private WMTSource source;
+    
+    private Throwable msg;
+    
+    public WMTGeoResource(WMTService service, String resourceId) {
         System.out.println("WMTGeoResource");
         this.service = service;
         this.wmtService = service;
+        this.resourceId = resourceId;
         
-        source = service.getSource();
+        this.source = null;
     }
-
+    
+    /**
+     * Returns the WMTSource object connected to this GeoResource
+     *
+     * @return
+     */
     public WMTSource getSource(){
+        if (source == null) {
+            synchronized (this) {
+                if (source == null) {
+                    try {                        
+                        source = WMTSourceFactory.createSource(wmtService, 
+                                wmtService.getIdentifier(), resourceId);       
+                    } catch(Throwable t) {
+                        source = null;
+                        msg = t;
+                    }
+                }
+            }
+        }
+        
         return source;
     }
     
     public String getTitle() {
-        return getSource().getName();
+        return getSource().getName();   
     }
     
     /*
      * @see net.refractions.udig.catalog.IResolve#canResolve(java.lang.Class)
      */
     public <T> boolean canResolve( Class<T> adaptee ) {
-        //System.out.println("WMTGeoResource.canresolve");
         return adaptee != null
                 && (adaptee.isAssignableFrom(WMTSource.class)
                         || super.canResolve(adaptee));
@@ -51,8 +75,6 @@ public class WMTGeoResource extends IGeoResource {
      *      org.eclipse.core.runtime.IProgressMonitor)
      */
     public <T> T resolve( Class<T> adaptee, IProgressMonitor monitor ) throws IOException {
-
-        System.out.println("WMTGeoResource.resolve");
         if (monitor == null)
             monitor = new NullProgressMonitor();
 
@@ -60,13 +82,17 @@ public class WMTGeoResource extends IGeoResource {
             throw new NullPointerException("No adaptor specified" ); //$NON-NLS-1$
         }        
         if (adaptee.isAssignableFrom(WMTSource.class)) {
-            return adaptee.cast(wmtService.getSource());
+            return adaptee.cast(getSource());
         }
 
         return super.resolve(adaptee, monitor);
     }
 
 
+    /*
+     * @see net.refractions.udig.catalog.IGeoResourceInfo#createInfo(java.lang.Class,
+     *      org.eclipse.core.runtime.IProgressMonitor
+     */
     protected IGeoResourceInfo createInfo( IProgressMonitor monitor ) throws IOException {
         if (info == null){
             synchronized (this) {
@@ -83,14 +109,20 @@ public class WMTGeoResource extends IGeoResource {
      * @see net.refractions.udig.catalog.IResolve#getStatus()
      */
     public Status getStatus() {
-        return service.getStatus();
+        if (msg != null) {
+            return Status.BROKEN;
+        } else if (source == null){
+            return Status.NOTCONNECTED;
+        } else {
+            return Status.CONNECTED;
+        }
     }
 
     /*
      * @see net.refractions.udig.catalog.IResolve#getMessage()
      */
     public Throwable getMessage() {
-        return service.getMessage();
+        return msg;
     }
 
     /*
@@ -99,7 +131,7 @@ public class WMTGeoResource extends IGeoResource {
     public URL getIdentifier() {
         try {
             return new URL(null,
-                    service.getIdentifier().toString() + "#WMTGeoResource" , CorePlugin.RELAXED_HANDLER); //$NON-NLS-1$
+                    service.getIdentifier().toString() + "#" + resourceId, CorePlugin.RELAXED_HANDLER); //$NON-NLS-1$
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }

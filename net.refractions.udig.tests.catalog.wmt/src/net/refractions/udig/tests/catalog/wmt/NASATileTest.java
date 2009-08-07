@@ -1,9 +1,5 @@
 package net.refractions.udig.tests.catalog.wmt;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
 import junit.framework.TestCase;
 import net.refractions.udig.catalog.internal.wmt.tile.NASATile;
 import net.refractions.udig.catalog.internal.wmt.tile.NASATile.NASATileName;
@@ -27,15 +23,11 @@ public class NASATileTest extends TestCase {
     @Before
     public void setUp() throws Exception {
         
-        Map<String,Serializable> params = new HashMap<String,Serializable>();
-        params.put(NASASource.KEY_TILEGROUP_NAME, "Global Mosaic, pan sharpened visual");
+        String resourceId1 = "Global Mosaic, pan sharpened visual";        
+        source = (NASASource) WMTSourceFactory.createSource(null, WMTSource.getRelatedServiceUrl(NASASource.class), resourceId1, true);
         
-        source = (NASASource) WMTSourceFactory.createSource(null, WMTSource.getRelatedServiceUrl(NASASource.class), params, true);
-        
-        Map<String,Serializable> params2 = new HashMap<String,Serializable>();
-        params2.put(NASASource.KEY_TILEGROUP_NAME, "Continental US Elevation");
-        
-        sourceUSA = (NASASource) WMTSourceFactory.createSource(null, WMTSource.getRelatedServiceUrl(NASASource.class), params2, true); 
+        String resourceId2 =  "Continental US Elevation";        
+        sourceUSA = (NASASource) WMTSourceFactory.createSource(null, WMTSource.getRelatedServiceUrl(NASASource.class), resourceId2, true); 
     }
 
     @Test

@@ -1,28 +1,34 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 import net.refractions.udig.catalog.internal.wmt.tile.NASATile;
 import net.refractions.udig.catalog.internal.wmt.tile.NASATile.NASATileName.NASAZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
 
+import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.jdom.Element;
 
+/**
+ * This class represents one TiledGroup
+ * see http://onearth.jpl.nasa.gov/wms.cgi?request=GetTileService
+ * and http://onearth.jpl.nasa.gov/tiled.html
+ * 
+ * @author to.srwn
+ * @since 1.1.0
+ */
 public class NASASource extends WMTSource {
-    public static final String KEY_TILEGROUP_NAME = "NASA_TILEGROUP"; //$NON-NLS-1$
+//    public static final String KEY_TILEGROUP_NAME = "NASA_TILEGROUP"; //$NON-NLS-1$
     
     private static WMTTileFactory tileFactory = new NASATile.NASATileFactory();
     
     private ReferencedEnvelope bounds;
+    /* The prefix for the request: http://wms.jpl.nasa.gov/wms.cgi? */
     private String baseUrl;
 
     private List<NASAZoomLevel> zoomLevels;    
@@ -45,27 +51,34 @@ public class NASASource extends WMTSource {
    
     protected NASASource() {}
 
+    /**
+     * This method parses all needed information: bounds, zoom-levels, 
+     * tile-size and tile-format.
+     */
     @Override
-    protected void init(Map<String, Serializable> params) throws Exception {
+    protected void init(String resourceId) throws Exception {
         NASASourceManager sourceManager = NASASourceManager.getInstance();
         
-        Element tiledGroup = sourceManager.getTiledGroup(params);
-        String baseUrl = sourceManager.getBaseUrl();        
+        Element tiledGroup = sourceManager.getTiledGroup(resourceId);
         
+        this.baseUrl = sourceManager.getBaseUrl();       
         setName(tiledGroup.getChildText("Name")); //$NON-NLS-1$
-        
-        this.baseUrl = baseUrl;
-        
-        String firstTilePattern = tiledGroup.getChild("TilePattern").getValue(); //$NON-NLS-1$
-        
         setBounds(tiledGroup.getChild("LatLonBoundingBox")); //$NON-NLS-1$
+                
+        String firstTilePattern = tiledGroup.getChild("TilePattern").getValue(); //$NON-NLS-1$
         setTileSize(firstTilePattern);
         setTileFormat(firstTilePattern);
+        
         setZoomLevels(tiledGroup.getChildren("TilePattern"), baseUrl); //$NON-NLS-1$        
     }
 
-
-
+    //region Scales/Zoom-Levels
+    /**
+     * Retrieves zoom-levels from the TilePatterns of a TiledGroup
+     *
+     * @param tilePatterns
+     * @param baseUrl
+     */
     private void setZoomLevels(List<?> tilePatterns, String baseUrl) {
         zoomLevels = new ArrayList<NASAZoomLevel>();
         
@@ -83,7 +96,10 @@ public class NASASource extends WMTSource {
         
         generateScaleList();       
     }
-
+    
+    /**
+     * Generates the scale-list from the given zoom-level-list.
+     */
     private void generateScaleList() {
         // first: sort the zoom-level list, so that low scales (high numbers)
         // are at top of the list
@@ -98,7 +114,9 @@ public class NASASource extends WMTSource {
             scales[i] = zoomLevels.get(i).getScale();
         }     
     }
+    //endregion
     
+    //region TiledGroup-bounds
     private void setBounds(Element latLonBoundingBox) {
         try {
             double minX = latLonBoundingBox.getAttribute("minx").getDoubleValue(); //$NON-NLS-1$
@@ -112,7 +130,9 @@ public class NASASource extends WMTSource {
         }
         System.out.println(bounds);
     }
+    //endregion
     
+    //region Tile-Size and Tile-Format
     /**
      * Gets the tile-size from the first tile-pattern.
      * 
@@ -157,6 +177,7 @@ public class NASASource extends WMTSource {
         
         tileFormat = format;
     }
+    //endregion
     
     @Override
     public String getFileFormat() {

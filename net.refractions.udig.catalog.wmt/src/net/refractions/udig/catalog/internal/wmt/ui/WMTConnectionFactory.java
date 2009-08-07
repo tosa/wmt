@@ -4,7 +4,7 @@ package net.refractions.udig.catalog.internal.wmt.ui;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.Map;
-import net.refractions.udig.catalog.internal.wmt.WMTService;
+
 import net.refractions.udig.catalog.ui.UDIGConnectionFactory;
 
 
@@ -15,11 +15,18 @@ public class WMTConnectionFactory extends UDIGConnectionFactory {
     }
 
     public Map<String, Serializable> createConnectionParameters(Object context) {
+        System.out.println("createConnectionParameters");
         return null;
     }
 
+    /**
+     * This method is only called (never called?), when a GeoResource for a NASA layer is 
+     * added, so we can always return the Url for a NASASource service.
+     */
     public URL createConnectionURL(Object context) {
-        System.out.println("WMTConnectionFactory.createConnectionURL : " + WMTService.SERVICE_URL.toString());
-        return WMTService.SERVICE_URL;
+        System.out.println("WMTConnectionFactory.createConnectionURL ");
+        
+        return null;
+//        return WMTSource.getRelatedServiceUrl(NASASource.class);
     }
 }
