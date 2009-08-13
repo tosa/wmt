@@ -198,6 +198,19 @@ public abstract class WMTSource {
         
         return url; 
     }
+    
+    public static URL getCloudMadeServiceUrl(String styleId) {
+        URL url = getRelatedServiceUrl(OSMCloudMadeSource.class);
+        
+        try {
+            url = new URL(null, url.toExternalForm() + "/" + styleId, CorePlugin.RELAXED_HANDLER); //$NON-NLS-1$
+        }
+        catch(MalformedURLException exc) {
+            url = null;
+        }        
+        
+        return url; 
+    }
     //endregion
     
     //region Zoom-level

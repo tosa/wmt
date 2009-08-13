@@ -29,11 +29,44 @@ public class WMTGeoResource extends IGeoResource {
         System.out.println("WMTGeoResource");
         this.service = service;
         this.wmtService = service;
-        this.resourceId = resourceId;
+        
+        if (resourceId.equals(WMTGeoResource.DEFAULT_ID)) {
+            // is this a OSMCloudMadeSource?
+            String styleId = getStyleIdFromUrl(wmtService.getIdentifier());
+            
+            // if yes, let's use the style-id as resource-id
+            if(styleId != null) {
+                this.resourceId = styleId;
+            } else {
+                this.resourceId = resourceId; 
+            }
+        } else {
+            this.resourceId = resourceId;            
+        }
         
         this.source = null;
     }
     
+    /**
+     * Gets the style-id from an url:
+     * wmt://localhost/wmt/net.refractions.udig.catalog.internal.wmt.wmtsource.OSMCloudMadeSource/3
+     *  -->
+     *  3 
+     *
+     * @param url
+     * @return
+     */
+    private String getStyleIdFromUrl(URL url) {
+        String className = WMTSourceFactory.getClassFromUrl(url);
+        String styleId = url.toString().replace(WMTService.ID, "").replace(className, "");  //$NON-NLS-1$ //$NON-NLS-2$ 
+        
+        if (!styleId.isEmpty()) {
+            return styleId.replace("/", "");//$NON-NLS-1$ //$NON-NLS-2$
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Returns the WMTSource object connected to this GeoResource
      *

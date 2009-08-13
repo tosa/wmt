@@ -23,7 +23,7 @@ public class WMTSourceFactory {
     /**
      * Strip out the start of the url:
      * 
-     * wmt:///localhost/wmt/net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource
+     * wmt://localhost/wmt/net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource
      *  -->
      *  net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource 
      *
@@ -31,7 +31,14 @@ public class WMTSourceFactory {
      * @return
      */
     public static String getClassFromUrl(URL url) {
-        return url.toString().replace(WMTService.ID, ""); //$NON-NLS-1$
+        String withoutId = url.toString().replace(WMTService.ID, ""); //$NON-NLS-1$
+        
+        int posSlash = withoutId.indexOf("/"); //$NON-NLS-1$
+        if (posSlash >= 0) {
+            return withoutId.substring(0, posSlash);
+        } else {
+            return withoutId;
+        }
     }
     
     public static WMTSource createSource(WMTService service, URL url, 

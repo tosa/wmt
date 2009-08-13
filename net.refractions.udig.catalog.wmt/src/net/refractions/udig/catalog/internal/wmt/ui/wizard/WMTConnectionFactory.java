@@ -1,4 +1,4 @@
-package net.refractions.udig.catalog.internal.wmt.ui;
+package net.refractions.udig.catalog.internal.wmt.ui.wizard;
 
 
 import java.io.Serializable;

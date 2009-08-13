@@ -59,6 +59,20 @@ public class Messages extends NLS {
     public static String ZoomLevelSwitcher_ZoomLevel;
     public static String ZoomLevelSwitcher_ZoomIn;
     public static String ZoomLevelSwitcher_ZoomOut;
+    
+    public static String Wizard_CloudMade_StyleFromGroup;
+    public static String Wizard_CloudMade_GroupCloudMade;
+    public static String Wizard_CloudMade_GroupFeatured;
+    public static String Wizard_CloudMade_StyleFromId;
+    public static String Wizard_CloudMade_StyleId;
+    public static String Wizard_CloudMade_DefaultStyleId;
+    public static String Wizard_CloudMade_RefreshPreview;
+    public static String Wizard_CloudMade_StyleEditorInfo;
+    public static String Wizard_CloudMade_Preview;
+    public static String Wizard_CloudMade_PreviewName;
+    public static String Wizard_CloudMade_PreviewId;
+    public static String Wizard_CloudMade_PreviewAuthor;
+    public static String Wizard_CloudMade_PreviewGetFullMap;
 	
 	static {
 		// initialize resource bundle

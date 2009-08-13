@@ -447,8 +447,8 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             
             paint.paint(graphics, coverage, style);
            
-//            if(TESTING){
-            if(true){
+            if(TESTING){
+//            if(true){
                 /* for testing draw border around tiles */
                 graphics.setColor(Color.BLACK);
                 graphics.drawLine((int)tileSize.getMinX(), (int)tileSize.getMinY(), (int)tileSize.getMinX(), (int)tileSize.getMaxY());

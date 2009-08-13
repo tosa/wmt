@@ -1,4 +1,4 @@
-package net.refractions.udig.catalog.internal.wmt.ui;
+package net.refractions.udig.catalog.internal.wmt.ui.wizard;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
@@ -8,11 +8,13 @@ import java.util.LinkedList;
 
 import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.IService;
-import net.refractions.udig.catalog.internal.wmt.WMTGeoResource;
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.WMTServiceExtension;
+import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.MQControl;
+import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.OSMCloudMadeControl;
+import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.OSMControl;
+import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.WMTWizardControl;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
-import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASourceManager;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMCycleMapSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMMapnikSource;
@@ -26,10 +28,10 @@ import net.refractions.udig.catalog.wmt.internal.Messages;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
@@ -47,6 +49,10 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
       
     private WMTServiceExtension serviceExtension;
     private Tree tree;
+    private StackLayout stackLayoutInfoBox;
+    private Composite infoBox;
+    private Composite parentControl;
+    private Composite childControl;
     
 
     public WMTWizardPage() {
@@ -118,10 +124,14 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
      * @param treeItem Selected TreeItem
      */
     private void getSelectedResources(Collection<URL> resourceIDs, TreeItem treeItem) {
-        if(treeItem.getData() instanceof IGeoResource) {
-            WMTGeoResource geoResource = (WMTGeoResource) treeItem.getData();
+        if(treeItem.getData() instanceof WMTWizardTreeItemData) {
+            WMTWizardTreeItemData itemData = (WMTWizardTreeItemData) treeItem.getData();
             
-            resourceIDs.add(geoResource.getIdentifier());
+            IGeoResource geoResource = itemData.getGeoResource();
+            
+            if (geoResource != null) {
+                resourceIDs.add(geoResource.getIdentifier());
+            }
         }
         
 
@@ -170,11 +180,14 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
     }
     
     private void addItemData(Collection<IService> services, Object data) {
-        if (data instanceof IService) {
-            IService service = (IService) data;
-            System.out.println(service.getTitle());
+        if (data instanceof WMTWizardTreeItemData) {
+            WMTWizardTreeItemData itemData = (WMTWizardTreeItemData) data;
             
-            services.add(service);
+            IService service = itemData.getService();
+            
+            if (service != null) {
+                services.add(service);
+            }
         }
     }
     //endregion
@@ -188,33 +201,44 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
      * @param treeItem The parent TreeItem.
      * @param sourceClass The class for which the service should be created.
      */
-    private void addWMTSourceToTree(TreeItem treeItem, Class<? extends WMTSource> sourceClass) {
+    private void addWMTSourceToTree(TreeItem treeItem, Class<? extends WMTSource> sourceClass,
+            WMTWizardControl controlFactory) {
         TreeItem newTreeItem = new TreeItem(treeItem, SWT.NONE);
         
         WMTService service = serviceExtension.createService(sourceClass);
         
         newTreeItem.setText(service.getName());
-        newTreeItem.setData(service);
+        
+        WMTWizardTreeItemData data = new WMTWizardTreeItemData(service, controlFactory);
+        newTreeItem.setData(data);
+        //newTreeItem.setData(service);
     }
     //endregion
     
-    public void createControl( Composite parent ) {
+    public void createControl(Composite parent) {
         System.out.println("createControl");
         
         // only when this is called for the first time
         if (tree != null && !tree.isDisposed()) return;
         
-        // otherwise build control
-        Composite composite = new Composite(parent, SWT.NONE);
-        setControl(composite);        
+        parentControl = parent;        
+        childControl = new Composite(parent, SWT.NONE);
+        final Composite composite = childControl;
+        setControl(composite); 
+        //composite.setLayoutData(new RowData(600, 480));       
         composite.setLayout(new FillLayout());
 
         //region Create tree component
         tree = new Tree(composite, SWT.BORDER | SWT.CHECK);
+//        tree.setLayoutData(new GridData(200, 480));
         tree.addListener(SWT.Selection, new org.eclipse.swt.widgets.Listener(){
-            public void handleEvent( Event event ) {
+            public void handleEvent(Event event) {
+                System.out.println("selection changed " + event.item);
+                TreeItem item = (TreeItem) event.item;
+                
+                displayInfoControl(item);
+                
                 if (event.detail == SWT.CHECK) {
-                    TreeItem item = (TreeItem) event.item;
                     
                     // Check child items
                     boolean checked = item.getChecked();
@@ -232,22 +256,43 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
             }
         });
         
+        infoBox = new Composite(composite, SWT.NONE);
+        stackLayoutInfoBox = new StackLayout();
+        infoBox.setLayout(stackLayoutInfoBox);
+//        infoBox.setLayoutData(new GridData(300, 480));
+        
+//        Text text = new Text (infoBox,    SWT.WRAP | SWT.MULTI | 
+//                                            SWT.BORDER | SWT.H_SCROLL |
+//                                            SWT.V_SCROLL | SWT.READ_ONLY);
+//        text.setText ("Space for general / copyright information / map samples / ..");
+//        
+//        stackLayoutInfoBox.topControl = text;
+        //endregion
+        
         //region Add OpenStreeMap services
         TreeItem osm = new TreeItem(tree, SWT.NONE);
         osm.setText(OSMSource.NAME);
-
-        addWMTSourceToTree(osm, OSMMapnikSource.class);
-        addWMTSourceToTree(osm, OSMOsmarenderSource.class);
-        addWMTSourceToTree(osm, OSMCycleMapSource.class);
+        
+        OSMControl osmControlFactory = new OSMControl();
+        addWMTSourceToTree(osm, OSMMapnikSource.class, osmControlFactory);
+        addWMTSourceToTree(osm, OSMOsmarenderSource.class, osmControlFactory);
+        addWMTSourceToTree(osm, OSMCycleMapSource.class, osmControlFactory);
+        
+        OSMCloudMadeControl osmCloudMadeControlFactory = new OSMCloudMadeControl();
+        TreeItem newTreeItem = new TreeItem(osm, SWT.NONE);        
+        newTreeItem.setText("CloudMade"); //$NON-NLS-1$
+        WMTWizardTreeItemData data = new WMTWizardTreeItemData(null, osmCloudMadeControlFactory);
+        newTreeItem.setData(data);
 
         osm.setExpanded(true);
         //endregion
         
         //region Add MapQuest services
+        MQControl mqControlFactory = new MQControl();
         TreeItem mq = new TreeItem(tree, SWT.NONE);
         mq.setText(MQSource.NAME);
 
-        addWMTSourceToTree(mq, MQSource.class);
+        addWMTSourceToTree(mq, MQSource.class, mqControlFactory);
 
         mq.setExpanded(true);
         //endregion
@@ -267,23 +312,30 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         
         // Enable first service for usability reasons 
         osm.getItems()[0].setChecked(true);
+        tree.setSelection(osm.getItems()[0]);
+        displayInfoControl(osm.getItems()[0]);
         osm.setChecked(true);
         osm.setGrayed(true);
-        //endregion
-        
-        //region Add information textbox
-        Text text = new Text (composite,    SWT.WRAP | SWT.MULTI | 
-                                            SWT.BORDER | SWT.H_SCROLL |
-                                            SWT.V_SCROLL | SWT.READ_ONLY);
-        text.setText ("Space for general / copyright information / map samples / ..");
         //endregion
 
 
         composite.pack();
+        parent.pack();
 
       }
     
     //region GUI helper methods    
+    private void displayInfoControl(TreeItem item) {
+        if (item.getData() != null && (item.getData() instanceof WMTWizardTreeItemData)) {
+            WMTWizardTreeItemData itemData = (WMTWizardTreeItemData) item.getData();
+            
+            stackLayoutInfoBox.topControl = itemData.getControlFactory().getControl(infoBox);
+            infoBox.layout();
+            childControl.pack();
+            parentControl.pack();
+         }
+    }
+    
     /**
      * Loops the tree and counts checked items
      * 

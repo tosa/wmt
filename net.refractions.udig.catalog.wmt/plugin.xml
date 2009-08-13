@@ -13,11 +13,11 @@
   </extension>
   <extension
        point="net.refractions.udig.catalog.ui.connectionFactory">
-    <factory class="net.refractions.udig.catalog.internal.wmt.ui.WMTConnectionFactory"
+    <factory class="net.refractions.udig.catalog.internal.wmt.ui.wizard.WMTConnectionFactory"
           id="net.refractions.udig.catalog.ui.WMT"/>
     <wizardPage
           banner="icons/wizban/wms_wiz.gif"
-          class="net.refractions.udig.catalog.internal.wmt.ui.WMTWizardPage"
+          class="net.refractions.udig.catalog.internal.wmt.ui.wizard.WMTWizardPage"
           description="%wizard.description"
           icon="icons/etool16/wms_wiz.gif"
           name="%wizard.name">

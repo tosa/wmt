@@ -8,6 +8,9 @@ import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.internal.wmt.WMTGeoResource;
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.WMTServiceExtension;
+import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.NASAControl;
+import net.refractions.udig.catalog.internal.wmt.ui.wizard.WMTWizardTreeItemData;
+import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.WMTWizardControl;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.TreeItem;
@@ -75,6 +78,7 @@ public class NASASourceManager {
     
     //region Build TreeItem for Wizard
     public void buildWizardTree(TreeItem treeItem) {
+        NASAControl controlFactory = new NASAControl();
         try {
             List<?> tiledGroups = tiledPatterns.getChildren("TiledGroup"); //$NON-NLS-1$
             
@@ -82,15 +86,20 @@ public class NASASourceManager {
             List<IGeoResource> geoResources = service.emptyResourcesList(null);
             geoResources.clear();
             
-            treeItem.setData(service);
+
+            WMTWizardTreeItemData data = new WMTWizardTreeItemData(service, controlFactory);
+            treeItem.setData(data);
+            //treeItem.setData(service);
             
-            buildWizardTreeFromTiledGroups(service, geoResources, treeItem, tiledGroups, ""); //$NON-NLS-1$
+            buildWizardTreeFromTiledGroups(service, geoResources, treeItem, tiledGroups, 
+                    "", controlFactory); //$NON-NLS-1$
         } catch(Exception exc) {
             // todo: something failed, log
         }
     }
     
-    private void buildWizardTreeFromTiledGroups(WMTService service, List<IGeoResource> geoResources, TreeItem treeItem, List<?> tiledGroups, String groupNames) {
+    private void buildWizardTreeFromTiledGroups(WMTService service, List<IGeoResource> geoResources, 
+            TreeItem treeItem, List<?> tiledGroups, String groupNames, WMTWizardControl controlFactory) {
         for(Object obj : tiledGroups) {
             if (obj instanceof Element) {
                 Element tiledGroup = (Element) obj;
@@ -108,13 +117,19 @@ public class NASASourceManager {
                     geoResources.add(geoResource);
                     
                     newTreeItem.setText(newGroupName);
-                    newTreeItem.setData(geoResource);
+                    
+                    WMTWizardTreeItemData data = new WMTWizardTreeItemData(geoResource, controlFactory);
+                    newTreeItem.setData(data);
+                    //newTreeItem.setData(geoResource);
                 } else {
                     TreeItem newTreeItem = new TreeItem(treeItem, SWT.NONE);
                     newTreeItem.setText(newGroupName);
                     
+                    WMTWizardTreeItemData data = new WMTWizardTreeItemData(null, controlFactory);
+                    newTreeItem.setData(data);
+                    
                     buildWizardTreeFromTiledGroups(service, geoResources, 
-                            newTreeItem, newTiledGroups, newGroupNames);
+                            newTreeItem, newTiledGroups, newGroupNames, controlFactory);
                 }
             }
         }
