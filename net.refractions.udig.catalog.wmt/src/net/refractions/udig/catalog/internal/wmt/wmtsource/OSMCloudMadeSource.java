@@ -1,7 +1,7 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
 public class OSMCloudMadeSource extends OSMSource{
-    private static final String NAME = "CloudMade"; //$NON-NLS-1$
+    public static final String NAME = "CloudMade"; //$NON-NLS-1$
     private static final int DEFAULT_STYLE = 1;
     private int style;
             

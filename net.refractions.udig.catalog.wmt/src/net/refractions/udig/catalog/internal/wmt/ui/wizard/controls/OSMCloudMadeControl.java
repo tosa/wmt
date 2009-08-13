@@ -257,7 +257,7 @@ public class OSMCloudMadeControl extends WMTWizardControl {
         lblStyleAuthorValue.setText(""); //$NON-NLS-1$
         
         previewImage = new Composite(gBPreview, SWT.NONE);
-        previewImage.setLayoutData(new RowData(256, 160));
+        previewImage.setLayoutData(new RowData(233, 160));
         previewImage.setCursor(new Cursor(display, SWT.CURSOR_HAND));
         previewImage.setToolTipText(Messages.Wizard_CloudMade_PreviewGetFullMap);
         previewImage.addMouseListener(new MouseListener() {
@@ -320,7 +320,6 @@ public class OSMCloudMadeControl extends WMTWizardControl {
     }
     
     private void updatePreview() {
-        System.out.println("updatePreview");
         OSMCloudMadeStylesManager.CloudMadeStyle style;
         
         if (btnStyleGroups.getSelection()) {
@@ -400,6 +399,4 @@ public class OSMCloudMadeControl extends WMTWizardControl {
             return OSMCloudMadeStylesManager.CloudMadeStyle.EMPTY_STYLE;
         }
     }
-
-
 }

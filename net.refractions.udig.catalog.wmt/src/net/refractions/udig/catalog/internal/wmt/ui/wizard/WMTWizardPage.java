@@ -16,6 +16,7 @@ import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.OSMControl;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.WMTWizardControl;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASourceManager;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMCloudMadeSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMCycleMapSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMMapnikSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMOsmarenderSource;
@@ -29,7 +30,8 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StackLayout;
-import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.RowData;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Tree;
@@ -51,7 +53,6 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
     private Tree tree;
     private StackLayout stackLayoutInfoBox;
     private Composite infoBox;
-    private Composite parentControl;
     private Composite childControl;
     
 
@@ -220,17 +221,15 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         
         // only when this is called for the first time
         if (tree != null && !tree.isDisposed()) return;
-        
-        parentControl = parent;        
+            
         childControl = new Composite(parent, SWT.NONE);
         final Composite composite = childControl;
+        composite.setLayout(new RowLayout());
         setControl(composite); 
-        //composite.setLayoutData(new RowData(600, 480));       
-        composite.setLayout(new FillLayout());
-
+        
         //region Create tree component
         tree = new Tree(composite, SWT.BORDER | SWT.CHECK);
-//        tree.setLayoutData(new GridData(200, 480));
+        tree.setLayoutData(new RowData(200, 432));
         tree.addListener(SWT.Selection, new org.eclipse.swt.widgets.Listener(){
             public void handleEvent(Event event) {
                 System.out.println("selection changed " + event.item);
@@ -239,7 +238,6 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
                 displayInfoControl(item);
                 
                 if (event.detail == SWT.CHECK) {
-                    
                     // Check child items
                     boolean checked = item.getChecked();
                     checkItems(item, checked);
@@ -259,14 +257,7 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         infoBox = new Composite(composite, SWT.NONE);
         stackLayoutInfoBox = new StackLayout();
         infoBox.setLayout(stackLayoutInfoBox);
-//        infoBox.setLayoutData(new GridData(300, 480));
-        
-//        Text text = new Text (infoBox,    SWT.WRAP | SWT.MULTI | 
-//                                            SWT.BORDER | SWT.H_SCROLL |
-//                                            SWT.V_SCROLL | SWT.READ_ONLY);
-//        text.setText ("Space for general / copyright information / map samples / ..");
-//        
-//        stackLayoutInfoBox.topControl = text;
+        infoBox.setLayoutData(new RowData(430, 460));
         //endregion
         
         //region Add OpenStreeMap services
@@ -280,7 +271,7 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         
         OSMCloudMadeControl osmCloudMadeControlFactory = new OSMCloudMadeControl();
         TreeItem newTreeItem = new TreeItem(osm, SWT.NONE);        
-        newTreeItem.setText("CloudMade"); //$NON-NLS-1$
+        newTreeItem.setText(OSMCloudMadeSource.NAME);
         WMTWizardTreeItemData data = new WMTWizardTreeItemData(null, osmCloudMadeControlFactory);
         newTreeItem.setData(data);
 
@@ -320,7 +311,7 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
 
 
         composite.pack();
-        parent.pack();
+        //parent.pack();
 
       }
     
@@ -332,7 +323,7 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
             stackLayoutInfoBox.topControl = itemData.getControlFactory().getControl(infoBox);
             infoBox.layout();
             childControl.pack();
-            parentControl.pack();
+//            parentControl.pack();
          }
     }
     
