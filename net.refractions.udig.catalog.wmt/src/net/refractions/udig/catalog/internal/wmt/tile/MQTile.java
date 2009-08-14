@@ -2,6 +2,8 @@ package net.refractions.udig.catalog.internal.wmt.tile;
 
 import java.net.URL;
 
+import net.refractions.udig.catalog.internal.wmt.Trace;
+import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
 import net.refractions.udig.catalog.internal.wmt.tile.MQTile.MQTileName.MQZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
@@ -108,6 +110,10 @@ public class MQTile extends WMTTile {
                     MQSource.scaleList[zoomLevel.getZoomLevel()]);
             int col = (int) (x / MQSource.TILESIZE_WIDTH);
             
+            WMTPlugin.debug("[MQTile.getTileFromCoordinate] " + zoomLevel.getZoomLevel() + //$NON-NLS-1$
+                    "/" + col +  "/" + row + " lon: " + lon + " lat: " + lat, Trace.MQ);  //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+            
+            
             return new MQTile(col, row, (MQZoomLevel) zoomLevel, (MQSource) wmtSource);
         }
         
@@ -157,8 +163,8 @@ public class MQTile extends WMTTile {
                 return new URL(null, mapImageUrl, CorePlugin.RELAXED_HANDLER);  
                 
             } catch (Exception e) {
-                // todo: error-handling
-                e.printStackTrace();
+                WMTPlugin.log("[MQTile] Could not create the url for tile (Zoom: " + zoomLevel.getZoomLevel() + //$NON-NLS-1$
+                        ", X: " + getX() + ", " + getY(), e); //$NON-NLS-1$ //$NON-NLS-2$
             }
             
             return null;

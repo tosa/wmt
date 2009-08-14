@@ -41,6 +41,15 @@ public class WMTSourceFactory {
         }
     }
     
+    /**
+     * Should be used only when testing!
+     *
+     * @param service
+     * @param url
+     * @param resourceId
+     * @param noException
+     * @return
+     */
     public static WMTSource createSource(WMTService service, URL url, 
             String resourceId, boolean noException) {
         WMTSource source;

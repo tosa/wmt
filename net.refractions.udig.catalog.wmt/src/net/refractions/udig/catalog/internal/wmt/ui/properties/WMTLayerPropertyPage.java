@@ -111,13 +111,13 @@ public class WMTLayerPropertyPage extends PropertyPage implements IWorkbenchProp
         groupBox.setLayout(new RowLayout(SWT.VERTICAL));
         groupBox.setText(Messages.Properties_Layer_GroupBox);
         
-        // Radion-Button "Automatic Selection"
+        // Radio-Button "Automatic Selection"
         btnAutomatic = new Button(groupBox, SWT.RADIO);
         btnAutomatic.addSelectionListener(selectionListener);
         btnAutomatic.setSelection(true);
         btnAutomatic.setText(Messages.Properties_Layer_AutomaticSelection);
 
-        // Radion-Button "Manual Selection"
+        // Radio-Button "Manual Selection"
         btnManual = new Button(groupBox, SWT.RADIO);
         btnManual.setText(Messages.Properties_Layer_ManualSelection);
         

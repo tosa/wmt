@@ -16,12 +16,12 @@ public class WMTServiceExtension implements ServiceExtension {
      * @see net.refractions.udig.catalog.ServiceExtension#createService(java.net.URL, java.util.Map)
      */
     public WMTService createService(URL id, Map<String,Serializable> params) {
-        System.out.println("WMTServiceExtension.createService");//$NON-NLS-1$
         if (params == null)
             return null;
         
         if( params.containsKey(KEY)){
-            System.out.println((URL) params.get(WMTServiceExtension.KEY));
+            WMTPlugin.trace("[WMTService.createService] " + ((URL) params.get(WMTServiceExtension.KEY)), null); //$NON-NLS-1$
+         
             return new WMTService(params);
         }
         
@@ -62,7 +62,6 @@ public class WMTServiceExtension implements ServiceExtension {
      * @see net.refractions.udig.catalog.ServiceExtension#createParams(java.net.URL)
      */
     public Map<String,Serializable> createParams(URL url) {
-        System.out.println("createParams");//$NON-NLS-1$
         //todo: check if the class exists?
         if (url != null && url.toExternalForm().startsWith(WMTService.ID)){
             Map<String,Serializable> map = new HashMap<String,Serializable>();

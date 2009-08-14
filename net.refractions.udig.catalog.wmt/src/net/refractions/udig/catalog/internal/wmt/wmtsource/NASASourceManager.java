@@ -6,6 +6,7 @@ import java.util.List;
 
 import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.internal.wmt.WMTGeoResource;
+import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.WMTServiceExtension;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.NASAControl;
@@ -58,6 +59,7 @@ public class NASASourceManager {
             tiledPatterns = root.getChild("TiledPatterns"); //$NON-NLS-1$
             
         } catch(Exception exc) {
+            WMTPlugin.log("[NASASourceManager] Loading tileservice-file failed: " + TILESERVICE_FILE, exc); //$NON-NLS-1$
             tiledPatterns = null;
         }
     }
@@ -89,12 +91,11 @@ public class NASASourceManager {
 
             WMTWizardTreeItemData data = new WMTWizardTreeItemData(service, controlFactory);
             treeItem.setData(data);
-            //treeItem.setData(service);
             
             buildWizardTreeFromTiledGroups(service, geoResources, treeItem, tiledGroups, 
                     "", controlFactory); //$NON-NLS-1$
         } catch(Exception exc) {
-            // todo: something failed, log
+            WMTPlugin.log("[NASASourceManager.buildWizardTree] Failed: ", exc); //$NON-NLS-1$
         }
     }
     
@@ -145,7 +146,7 @@ public class NASASourceManager {
             
             buildGeoResourcesFromTiledGroups(service, geoResources, tiledGroups, ""); //$NON-NLS-1$
         } catch(Exception exc) {
-            // todo: something failed, log
+            WMTPlugin.log("[NASASourceManager.buildGeoResources] Failed: ", exc); //$NON-NLS-1$
         }       
     }
     

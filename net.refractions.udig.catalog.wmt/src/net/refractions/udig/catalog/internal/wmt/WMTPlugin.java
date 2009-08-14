@@ -26,7 +26,6 @@ public class WMTPlugin extends AbstractUIPlugin {
 	public WMTPlugin() {
 		super();
 		plugin = this;
-		System.out.println("WMTPlugin (Catalog)");
 	}
 
 	/**
@@ -127,8 +126,19 @@ public class WMTPlugin extends AbstractUIPlugin {
      * @param trace currently only RENDER is defined
      * @return true if -debug is on for this plugin 
      */
-    public static boolean isDebugging( final String trace ){
+    public static boolean isDebugging(final String trace){
         return getDefault().isDebugging() &&
             "true".equalsIgnoreCase(Platform.getDebugOption(trace)); //$NON-NLS-1$    
-    }        
+    }
+    
+    public static void debug(String message, final String trace) {
+        debug(message, null, trace);
+    }
+    
+    public static void debug(String message, Throwable e, final String trace) {
+        if(isDebugging(trace)) {
+            if(message != null) System.out.println(message);
+            if(e != null) e.printStackTrace();
+        }
+    }
 }

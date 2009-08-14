@@ -1,24 +1,13 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile;
-import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName.OSMZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
-import net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerProperties;
-import net.refractions.udig.catalog.wmsc.server.Tile;
-
-import org.geotools.geometry.jts.ReferencedEnvelope;
-
-import com.vividsolutions.jts.geom.Envelope;
 
 public abstract class OSMSource extends WMTSource {
     public static String NAME = "OpenStreetMap"; //$NON-NLS-1$
     private static WMTTileFactory tileFactory = new OSMTile.OSMTileFactory();
     
     protected OSMSource() {
-        System.out.println(NAME);
         setName(NAME); 
     }
     

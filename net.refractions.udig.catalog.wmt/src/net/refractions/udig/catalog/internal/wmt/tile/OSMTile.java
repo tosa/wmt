@@ -8,20 +8,14 @@ import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 import com.vividsolutions.jts.geom.Coordinate;
 
+import net.refractions.udig.catalog.internal.wmt.Trace;
+import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName.OSMZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.core.internal.CorePlugin;
 
-/**
- * 
- * TODO Purpose of 
- * <p>
- *
- * </p>
- * @author to.srwn
- * @since 1.1.0
- */
+
 public class OSMTile extends WMTTile {
     private OSMTileName tileName;
     private OSMSource osmSource;
@@ -130,8 +124,9 @@ public class OSMTile extends WMTTile {
                     / Math.PI)
                     / 2 * (1 << zoomLevel.getZoomLevel())
                 );
-            System.out.println("getTileFromCoordinate " + zoomLevel.getZoomLevel() + "/" + xTile +  "/" + 
-                    yTile + " lon: " + lon + " lat: " + lat );
+            
+            WMTPlugin.debug("[OSMTile.getTileFromCoordinate] " + zoomLevel.getZoomLevel() + //$NON-NLS-1$
+            		"/" + xTile +  "/" + yTile + " lon: " + lon + " lat: " + lat, Trace.OSM);  //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
             
             return new OSMTile(xTile, yTile, (OSMZoomLevel) zoomLevel, (OSMSource) wmtSource);
         }   
@@ -178,19 +173,12 @@ public class OSMTile extends WMTTile {
                         getY() + ".png", //$NON-NLS-1$
                         CorePlugin.RELAXED_HANDLER); 
             } catch (MalformedURLException e) {
-                e.printStackTrace();
+                WMTPlugin.log("[OSMTile] Could not create the url for tile (Zoom: " + zoomLevel.getZoomLevel() + //$NON-NLS-1$
+                        ", X: " + getX() + ", " + getY(), e); //$NON-NLS-1$ //$NON-NLS-2$
             }
             
             return null;
         }
-        
-//        public OSMTileName getLeftNeighbour() {
-//            return new OSMTileName( 
-//                        WMTTileName.arithmeticMod((x-1), zoomLevel.getMaxTileNumber()),
-//                        y,
-//                        zoomLevel,
-//                        osmSource);
-//        }
         
         public OSMTileName getRightNeighbour() {
             return new OSMTileName( 
@@ -199,14 +187,6 @@ public class OSMTile extends WMTTile {
                         zoomLevel,
                         osmSource);
         }
-        
-//        public OSMTileName getUpperNeighbour() {
-//            return new OSMTileName( 
-//                        x,
-//                        WMTTileName.arithmeticMod((y-1), zoomLevel.getMaxTileNumber()),
-//                        zoomLevel,
-//                        osmSource);
-//        }
         
         public OSMTileName getLowerNeighbour() {
             return new OSMTileName( 

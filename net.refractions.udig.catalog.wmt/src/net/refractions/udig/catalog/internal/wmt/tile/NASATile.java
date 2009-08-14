@@ -7,6 +7,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
+import net.refractions.udig.catalog.internal.wmt.Trace;
+import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
 import net.refractions.udig.catalog.internal.wmt.tile.NASATile.NASATileName.NASAZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
@@ -102,6 +104,9 @@ public class NASATile extends WMTTile {
             int row = (int) Math.abs((lat - nasaSource.getBounds().getMaxY())  / nasaZoomLevel.getHeightInWorldUnits());
             int col = (int) Math.abs((lon - nasaSource.getBounds().getMinX()) / nasaZoomLevel.getWidthInWorldUnits());
             
+            WMTPlugin.debug("[NASATile.getTileFromCoordinate] " + zoomLevel.getZoomLevel() + //$NON-NLS-1$
+                    "/" + col +  "/" + row + " lon: " + lon + " lat: " + lat, Trace.NASA);  //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+            
             return new NASATile(col, row, nasaZoomLevel, (NASASource) wmtSource);
         }
         //endregion
@@ -142,8 +147,8 @@ public class NASATile extends WMTTile {
                 return new URL(null, tileUrl, CorePlugin.RELAXED_HANDLER);  
                 
             } catch (Exception e) {
-                // todo: error-handling
-                e.printStackTrace();
+                WMTPlugin.log("[NASATile] Could not create the url for tile (Zoom: " + zoomLevel.getZoomLevel() + //$NON-NLS-1$
+                        ", X: " + getX() + ", " + getY(), e); //$NON-NLS-1$ //$NON-NLS-2$
             }
             
             return null;
@@ -325,7 +330,9 @@ public class NASATile extends WMTTile {
                         );
                         
                         return;
-                    } catch(NumberFormatException exc) {}
+                    } catch(NumberFormatException exc) {
+                        WMTPlugin.log("[NASATile] Getting the bbox failed", exc); //$NON-NLS-1$
+                    }
                 }
                 
                 boundsOfFirstTile = null;

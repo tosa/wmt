@@ -175,7 +175,7 @@ public class OSMCloudMadeStylesManager {
 				
 				return;
 			} catch (Exception exc) {
-				// download failed, log
+				WMTPlugin.log("[CloudMadeStyleGroup.loadStyles] Getting styles from request failed", exc); //$NON-NLS-1$
 			}
 			
 			// Do not try to get the data from a file
@@ -186,7 +186,8 @@ public class OSMCloudMadeStylesManager {
 				
 				return;
 			} catch (Exception exc) {
-				// backupe file is broken, log
+				// backup is broken, log
+                WMTPlugin.log("[CloudMadeStyleGroup.loadStyles] Getting styles from backup failed", exc); //$NON-NLS-1$
 			}
 			
 			try {
@@ -195,14 +196,13 @@ public class OSMCloudMadeStylesManager {
 				return;
 			} catch (Exception exc) {
 				// fallback file is broken, log
+                WMTPlugin.log("[CloudMadeStyleGroup.loadStyles] Getting style from fallback file failed", exc); //$NON-NLS-1$
 				styles = Collections.emptyList();
 			}
 		}
 		
 		private void getStylesFromRequest() throws Exception {
 			// download request
-			
-			
 			URL url = new URL(requestUrl);
 			BufferedReader in = new BufferedReader(
 					new InputStreamReader(url.openStream()));
@@ -210,18 +210,14 @@ public class OSMCloudMadeStylesManager {
 			String rawStyles = getStylesFromStream(in);
 			
 			// do not write the result to a file
-			if (requestOnly) return;
-			
-			// write the plain response to the properties as backup
-			try {
-			    preferences.setValue(backupProperties, rawStyles);
-			} catch(Exception exc) {
-				// writing to backup file failed, log
-			}
+			if (requestOnly) return;			
 			
 			if ((styles == null) || (styles.isEmpty())) {
-			    throw new Exception("No Styles loaded"); //$NON-NLS-1$
+			    throw new Exception("No Styles loaded: " + rawStyles); //$NON-NLS-1$
 			}
+            
+            // write the plain response to the properties as backup
+            preferences.setValue(backupProperties, rawStyles);
 		}
 		
 		private void getStylesFromBackup() throws Exception {

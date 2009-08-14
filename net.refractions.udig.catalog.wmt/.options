@@ -1,2 +1,6 @@
 net.refractions.udig.catalog.wmt/debug=true
 net.refractions.udig.catalog.wmt/debug/request=true
+net.refractions.udig.catalog.wmt/debug/osm=true
+net.refractions.udig.catalog.wmt/debug/nasa=true
+net.refractions.udig.catalog.wmt/debug/mq=true
+net.refractions.udig.catalog.wmt/debug/wizard=true

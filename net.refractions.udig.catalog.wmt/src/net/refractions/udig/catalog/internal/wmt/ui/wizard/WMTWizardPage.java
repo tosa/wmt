@@ -8,6 +8,8 @@ import java.util.LinkedList;
 
 import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.IService;
+import net.refractions.udig.catalog.internal.wmt.Trace;
+import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.WMTServiceExtension;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.MQControl;
@@ -15,6 +17,7 @@ import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.OSMCloudMade
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.OSMControl;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.WMTWizardControl;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASourceManager;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMCloudMadeSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMCycleMapSource;
@@ -68,8 +71,6 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
 
     @Override
     public boolean leavingPage() {
-        System.out.println("leavingPage");
-        
         // Skip the resource selection wizard page
         IRunnableWithProgress runnable = new IRunnableWithProgress(){
             public void run( IProgressMonitor monitor ) throws InvocationTargetException,
@@ -131,6 +132,9 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
             IGeoResource geoResource = itemData.getGeoResource();
             
             if (geoResource != null) {
+                WMTPlugin.debug("[Wizard.getSelectedResources] adding " +  //$NON-NLS-1$
+                        geoResource.getIdentifier(), Trace.WIZARD);
+                
                 resourceIDs.add(geoResource.getIdentifier());
             }
         }
@@ -151,9 +155,7 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
      * Loops the tree and returns selected services.
      */
     @Override
-    public Collection<IService> getServices() {
-        System.out.println("Collection<IService> WMTWizardPage.getServices");
-        
+    public Collection<IService> getServices() {        
         Collection<IService> services = new ArrayList<IService>();
         
         for (int i = 0; i < tree.getItemCount(); i++) {
@@ -217,8 +219,6 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
     //endregion
     
     public void createControl(Composite parent) {
-        System.out.println("createControl");
-        
         // only when this is called for the first time
         if (tree != null && !tree.isDisposed()) return;
             
@@ -232,7 +232,6 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         tree.setLayoutData(new RowData(200, 432));
         tree.addListener(SWT.Selection, new org.eclipse.swt.widgets.Listener(){
             public void handleEvent(Event event) {
-                System.out.println("selection changed " + event.item);
                 TreeItem item = (TreeItem) event.item;
                 
                 displayInfoControl(item);
@@ -290,7 +289,7 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         
         //region Add NASA services
         TreeItem nasa = new TreeItem(tree, SWT.NONE);
-        nasa.setText("NASA");
+        nasa.setText(NASASource.NAME);
         
         NASASourceManager nasaManager = NASASourceManager.getInstance();
         
@@ -311,7 +310,6 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
 
 
         composite.pack();
-        //parent.pack();
 
       }
     
@@ -323,7 +321,6 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
             stackLayoutInfoBox.topControl = itemData.getControlFactory().getControl(infoBox);
             infoBox.layout();
             childControl.pack();
-//            parentControl.pack();
          }
     }
     

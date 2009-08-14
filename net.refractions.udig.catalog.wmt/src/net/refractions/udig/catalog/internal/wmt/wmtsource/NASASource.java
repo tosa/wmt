@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.refractions.udig.catalog.internal.wmt.Trace;
+import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
 import net.refractions.udig.catalog.internal.wmt.tile.NASATile;
 import net.refractions.udig.catalog.internal.wmt.tile.NASATile.NASATileName.NASAZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
@@ -24,7 +26,7 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
  * @since 1.1.0
  */
 public class NASASource extends WMTSource {
-//    public static final String KEY_TILEGROUP_NAME = "NASA_TILEGROUP"; //$NON-NLS-1$
+    public static String NAME = "NASA"; //$NON-NLS-1$
     
     private static WMTTileFactory tileFactory = new NASATile.NASATileFactory();
     
@@ -70,6 +72,8 @@ public class NASASource extends WMTSource {
         setTileSize(firstTilePattern);
         setTileFormat(firstTilePattern);
         
+        WMTPlugin.debug("[NASASource] " + getName() + " " + getBounds(), Trace.NASA); //$NON-NLS-1$ //$NON-NLS-2$
+        
         setZoomLevels(tiledGroup.getChildren("TilePattern"), baseUrl); //$NON-NLS-1$        
     }
 
@@ -89,7 +93,8 @@ public class NASASource extends WMTSource {
                 String tilePatternText = tilePattern.getValue();
                 NASAZoomLevel zoomLevel = new NASAZoomLevel(tilePatternText, this);
                 
-                System.out.println("Zoom-Level " + zoomLevel.getScale() + " " + zoomLevel.getWidthInWorldUnits());
+                WMTPlugin.debug("[NASASource] Zoom-Level: " + zoomLevel.getScale() +  //$NON-NLS-1$
+                        " " + zoomLevel.getWidthInWorldUnits(), Trace.NASA); //$NON-NLS-1$
                 
                 zoomLevels.add(zoomLevel);
             }
@@ -127,9 +132,10 @@ public class NASASource extends WMTSource {
             
             bounds = new ReferencedEnvelope(minX, maxX, minY, maxY, DefaultGeographicCRS.WGS84);            
         } catch(Exception exc) {
+            WMTPlugin.log("[NASASource.setBounds] Failed: " + getName(), exc); //$NON-NLS-1$
+            
             bounds = new ReferencedEnvelope(-180, 180, -90, 90, DefaultGeographicCRS.WGS84);
         }
-        System.out.println(bounds);
     }
     //endregion
     
@@ -156,7 +162,9 @@ public class NASASource extends WMTSource {
                 tileHeight = height;
                 
                 return;
-            } catch(Exception exc) {}
+            } catch(Exception exc) {
+                WMTPlugin.log("[NASASource.setTileSize] Failed: " + getName(), exc); //$NON-NLS-1$
+            }
         }
         
         tileWidth = 512;
@@ -174,6 +182,8 @@ public class NASASource extends WMTSource {
         String format = "jpeg"; //$NON-NLS-1$
         if (matcher.find()) {
             format = matcher.group(2);
+        } else {
+            WMTPlugin.log("[NASASource.setTileFormat] Could not get the format: " + getName(), null); //$NON-NLS-1$
         }
         
         tileFormat = format;

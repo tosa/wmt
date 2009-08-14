@@ -4,7 +4,6 @@ public class OSMMapnikSource extends OSMSource {
     public static String NAME = "Mapnik"; //$NON-NLS-1$
     
     protected OSMMapnikSource() {
-        System.out.println(NAME);
         setName(NAME); 
     }
 

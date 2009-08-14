@@ -1,5 +1,7 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
+import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
+
 public class OSMCloudMadeSource extends OSMSource{
     public static final String NAME = "CloudMade"; //$NON-NLS-1$
     private static final int DEFAULT_STYLE = 1;
@@ -12,6 +14,8 @@ public class OSMCloudMadeSource extends OSMSource{
         try{
             style = Integer.parseInt(resourceId);
         } catch(Exception exc) {
+            WMTPlugin.log("[OSMCloudMadeSource.init] Couldn't get the style-id, taking the default-id:", exc); //$NON-NLS-1$
+            
             style = DEFAULT_STYLE; // set default style
         }
         

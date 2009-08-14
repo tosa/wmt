@@ -22,12 +22,8 @@ import org.eclipse.core.runtime.IProgressMonitor;
 
 
 class WMTServiceInfo extends IServiceInfo {
-    /** WMSServiceInfo service field */
-    private final WMTService service;
 
     WMTServiceInfo( WMTService service, IProgressMonitor monitor) {
-        this.service = service;
-        
         this.title = service.getIdentifier().toString();
         this.description = "WMT Description";
         this.keywords = new String[]{"WMT"};        

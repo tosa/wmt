@@ -1,13 +1,12 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
-import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import net.refractions.udig.catalog.internal.wms.Trace;
+import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
@@ -43,7 +42,6 @@ public abstract class WMTSource {
      * out of Memory, the GC will free space.
      **/
     private ObjectCache tiles = ObjectCaches.create("soft", 50); //$NON-NLS-1$
-    private List<String> tempTileList = new ArrayList<String>(); // just for testing (i will take this out later)
     
     private WMTService wmtService;
     
@@ -83,34 +81,37 @@ public abstract class WMTSource {
         try {
             crs = CRS.decode("EPSG:900913"); //$NON-NLS-1$
         } catch (Exception exc1) {
+            WMTPlugin.trace("[WMTSource] EPSG:900913 is not in the database, now it is created manually", null); //$NON-NLS-1$
+            
             String wkt =
-                "PROJCS[\"Google Mercator\","+
-               "GEOGCS[\"WGS 84\","+
-                "    DATUM[\"World Geodetic System 1984\"," +
-                "        SPHEROID[\"WGS 84\",6378137.0,298.257223563," +
-                "            AUTHORITY[\"EPSG\",\"7030\"]]," +
-                "        AUTHORITY[\"EPSG\",\"6326\"]]," +
-                "    PRIMEM[\"Greenwich\",0.0," +
-                "        AUTHORITY[\"EPSG\",\"8901\"]]," +
-                "    UNIT[\"degree\",0.017453292519943295]," +
-                "    AXIS[\"Geodetic latitude\",NORTH]," +
-                "    AXIS[\"Geodetic longitude\",EAST]," +
-                "    AUTHORITY[\"EPSG\",\"4326\"]]," +
-                "PROJECTION[\"Mercator_1SP\"]," +
-                "PARAMETER[\"semi_minor\",6378137.0]," +
-                "PARAMETER[\"latitude_of_origin\",0.0]," +
-                "PARAMETER[\"central_meridian\",0.0]," +
-                "PARAMETER[\"scale_factor\",1.0],"+
-                "PARAMETER[\"false_easting\",0.0]," +
-                "PARAMETER[\"false_northing\",0.0]," +
-                "UNIT[\"m\",1.0]," +
-                "AXIS[\"Easting\",EAST]," +
-                "AXIS[\"Northing\",NORTH]," +
-                "AUTHORITY[\"EPSG\",\"900913\"]]";
+                "PROJCS[\"Google Mercator\"," + //$NON-NLS-1$
+               "GEOGCS[\"WGS 84\"," + //$NON-NLS-1$
+                "    DATUM[\"World Geodetic System 1984\"," + //$NON-NLS-1$
+                "        SPHEROID[\"WGS 84\",6378137.0,298.257223563," + //$NON-NLS-1$
+                "            AUTHORITY[\"EPSG\",\"7030\"]]," + //$NON-NLS-1$
+                "        AUTHORITY[\"EPSG\",\"6326\"]]," + //$NON-NLS-1$
+                "    PRIMEM[\"Greenwich\",0.0," + //$NON-NLS-1$
+                "        AUTHORITY[\"EPSG\",\"8901\"]]," + //$NON-NLS-1$
+                "    UNIT[\"degree\",0.017453292519943295]," + //$NON-NLS-1$
+                "    AXIS[\"Geodetic latitude\",NORTH]," + //$NON-NLS-1$
+                "    AXIS[\"Geodetic longitude\",EAST]," + //$NON-NLS-1$
+                "    AUTHORITY[\"EPSG\",\"4326\"]]," + //$NON-NLS-1$
+                "PROJECTION[\"Mercator_1SP\"]," + //$NON-NLS-1$
+                "PARAMETER[\"semi_minor\",6378137.0]," + //$NON-NLS-1$
+                "PARAMETER[\"latitude_of_origin\",0.0]," + //$NON-NLS-1$
+                "PARAMETER[\"central_meridian\",0.0]," + //$NON-NLS-1$
+                "PARAMETER[\"scale_factor\",1.0],"+ //$NON-NLS-1$
+                "PARAMETER[\"false_easting\",0.0]," + //$NON-NLS-1$
+                "PARAMETER[\"false_northing\",0.0]," + //$NON-NLS-1$
+                "UNIT[\"m\",1.0]," + //$NON-NLS-1$
+                "AXIS[\"Easting\",EAST]," + //$NON-NLS-1$
+                "AXIS[\"Northing\",NORTH]," + //$NON-NLS-1$
+                "AUTHORITY[\"EPSG\",\"900913\"]]"; //$NON-NLS-1$
             
             try {
                 crs = CRS.parseWKT(wkt);
             } catch (Exception exc2) {
+                WMTPlugin.log("[WMTSource] Could not build EPSG:900913!", exc2); //$NON-NLS-1$
                 crs = DefaultGeographicCRS.WGS84;
             }
         }
@@ -139,23 +140,15 @@ public abstract class WMTSource {
 
     //region Methods to access the tile-list (cache)
     public boolean listContainsTile(String tileId) {
-        System.out.println("ListContainsTile: " + (tiles.peek(tileId) == null) + " - " + (tiles.get(tileId) == null));
         return !(tiles.peek(tileId) == null || tiles.get(tileId) == null);
     }
     
     public WMTTile addTileToList(WMTTile tile) {
-        System.out.println(" --------------------------- " + 
-                tempTileList.contains(tile.getId()) + " - " + listContainsTile(tile.getId())
-                + " --- " + tiles.getKeys().size());
-        
-        if(!tempTileList.contains(tile.getId()))
-            tempTileList.add(tile.getId());
-        
         if (listContainsTile(tile.getId())){
-            System.out.println(tile.getId() + " already in Cache");
+            WMTPlugin.debug("[WMTSource.addTileToList] Already in cache: " + tile.getId(), Trace.REQUEST); //$NON-NLS-1$
             return getTileFromList(tile.getId());
         } else {
-            System.out.println(tile.getId() + " was not in Cache");
+            WMTPlugin.debug("[WMTSource.addTileToList] Was not in cache: " + tile.getId(), Trace.REQUEST); //$NON-NLS-1$
             tiles.put(tile.getId(), tile);
             return tile;            
         }
@@ -193,6 +186,7 @@ public abstract class WMTSource {
             url = new URL(null, WMTService.ID + sourceClass.getName(), CorePlugin.RELAXED_HANDLER);
         }
         catch(MalformedURLException exc) {
+            WMTPlugin.log("[WMTSource.getRelatedServiceUrl] Could not create url: " + sourceClass.getName(), exc); //$NON-NLS-1$
             url = null;
         }        
         
@@ -206,6 +200,7 @@ public abstract class WMTSource {
             url = new URL(null, url.toExternalForm() + "/" + styleId, CorePlugin.RELAXED_HANDLER); //$NON-NLS-1$
         }
         catch(MalformedURLException exc) {
+            WMTPlugin.log("[WMTSource.getCloudMadeServiceUrl] Could not create url: " + styleId, exc); //$NON-NLS-1$
             url = null;
         }        
         
@@ -374,8 +369,8 @@ public abstract class WMTSource {
                 
         Map<String, Tile> tileList = new HashMap<String, Tile>();
         
-        System.out.println("MinX: " + extent.getMinX() + " MaxX: " + extent.getMaxX());
-        System.out.println("MinY: " + extent.getMinY() + " MaxY: " + extent.getMaxY());
+        WMTPlugin.debug("[WMTSource.cutExtentIntoTiles] Zoom-Level: " + zoomLevel.getZoomLevel() +  //$NON-NLS-1$
+                " Extent: " + extent, Trace.REQUEST); //$NON-NLS-1$
         
         // Let's get the first tile which covers the upper-left corner
         WMTTile firstTile = tileFactory.getTileFromCoordinate(
@@ -397,7 +392,8 @@ public abstract class WMTSource {
                         && !firstTileOfRow.equals(rightNeighbour)) {
                     tileList.put(rightNeighbour.getId(), addTileToList(rightNeighbour));
                     
-                    System.out.println("adding tile(r) " + rightNeighbour.getId());
+                    WMTPlugin.debug("[WMTSource.cutExtentIntoTiles] Adding right neighbour: " +  //$NON-NLS-1$
+                            rightNeighbour.getId(), Trace.REQUEST);
                     
                     movingTile = rightNeighbour;
                 } else {
@@ -413,7 +409,8 @@ public abstract class WMTSource {
                     && !firstTile.equals(lowerNeighbour)) {
                 tileList.put(lowerNeighbour.getId(), addTileToList(lowerNeighbour));
                 
-                System.out.println("adding tile(l) " + lowerNeighbour.getId());
+                WMTPlugin.debug("[WMTSource.cutExtentIntoTiles] Adding lower neighbour: " +  //$NON-NLS-1$
+                        lowerNeighbour.getId(), Trace.REQUEST);
                 
                 firstTileOfRow = movingTile = lowerNeighbour;
             } else {

@@ -26,7 +26,6 @@ public class WMTGeoResource extends IGeoResource {
     private Throwable msg;
     
     public WMTGeoResource(WMTService service, String resourceId) {
-        System.out.println("WMTGeoResource");
         this.service = service;
         this.wmtService = service;
         
@@ -80,6 +79,9 @@ public class WMTGeoResource extends IGeoResource {
                         source = WMTSourceFactory.createSource(wmtService, 
                                 wmtService.getIdentifier(), resourceId);       
                     } catch(Throwable t) {
+                        WMTPlugin.log("[WMTSource] Creating source failed: wmtService.getIdentifier() + " + //$NON-NLS-1$
+                        		"#" + resourceId , t); //$NON-NLS-1$
+                        
                         source = null;
                         msg = t;
                     }
@@ -166,7 +168,7 @@ public class WMTGeoResource extends IGeoResource {
             return new URL(null,
                     service.getIdentifier().toString() + "#" + resourceId, CorePlugin.RELAXED_HANDLER); //$NON-NLS-1$
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            WMTPlugin.log("[WMTGeoResource.getIdentifier] Construction the id failed: " + resourceId, e); //$NON-NLS-1$
         }
 
         return service.getIdentifier();

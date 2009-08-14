@@ -4,7 +4,6 @@ public class OSMCycleMapSource extends OSMSource {
     public static String NAME = "Cycle Map"; //$NON-NLS-1$
     
     protected OSMCycleMapSource() {
-        System.out.println(NAME);
         setName(NAME); 
     }
 
