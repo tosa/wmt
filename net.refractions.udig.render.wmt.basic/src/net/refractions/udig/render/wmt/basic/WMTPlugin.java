@@ -28,9 +28,10 @@ import org.geotools.data.wms.WebMapServer;
 import org.osgi.framework.BundleContext;
 
 /**
- * WMS renderer plugin
- * @author jones
- * @since 0.6.0
+ * WMTRenderer plugin
+ * 
+ * @author to.srwn
+ * @since 1.1.0
  */
 public class WMTPlugin extends AbstractUIPlugin {
 
@@ -43,7 +44,6 @@ public class WMTPlugin extends AbstractUIPlugin {
      */
     public WMTPlugin() {
         super();
-        System.out.println("WMTPlugin (Renderer)");
         plugin=this;
     }
 
@@ -60,7 +60,7 @@ public class WMTPlugin extends AbstractUIPlugin {
         try {
             Thread.currentThread().setContextClassLoader(WebMapServer.class.getClassLoader());
             Logger logger = Logger.getLogger("org.geotools.data.ows");//$NON-NLS-1$
-            if (!isDebugging()) { //$NON-NLS-1$
+            if (!isDebugging()) {
                 logger.setLevel(Level.SEVERE);
             } else {
                 logger.setLevel(Level.FINEST);
@@ -119,5 +119,16 @@ public class WMTPlugin extends AbstractUIPlugin {
         return getDefault().isDebugging() &&
             "true".equalsIgnoreCase(Platform.getDebugOption(trace)); //$NON-NLS-1$
     
+    }
+    
+    public static void debug(String message, final String trace) {
+        debug(message, null, trace);
+    }
+    
+    public static void debug(String message, Throwable e, final String trace) {
+        if(isDebugging(trace)) {
+            if(message != null) System.out.println(message);
+            if(e != null) e.printStackTrace();
+        }
     }
 }

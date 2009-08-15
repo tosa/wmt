@@ -21,15 +21,11 @@ import net.refractions.udig.project.render.AbstractRenderMetrics;
 import net.refractions.udig.project.render.IRenderContext;
 import net.refractions.udig.project.render.IRenderMetricsFactory;
 
-/**
- * Creates Metrics for the BasicWMSRenderer
- * 
- * @author Richard Gould
- */
+
 public class BasicWMTMetricsFactory implements IRenderMetricsFactory {
 
 
-    public boolean canRender( IRenderContext toolkit ) {
+    public boolean canRender(IRenderContext toolkit) {
         return (toolkit.getLayer().hasResource(WMTGeoResource.class));
     }
 
@@ -39,11 +35,11 @@ public class BasicWMTMetricsFactory implements IRenderMetricsFactory {
     public AbstractRenderMetrics createMetrics( IRenderContext context ) {
         return new BasicWMTMetrics(context, this);
     }
+    
     /**
      * @see net.refractions.udig.project.render.RenderMetrics#getRendererType()
      */
-    public Class getRendererType() {
+    public Class<BasicWMTRenderer> getRendererType() {
         return BasicWMTRenderer.class;
     }
-    
 }

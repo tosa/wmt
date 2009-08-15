@@ -9,19 +9,8 @@ import net.refractions.udig.project.render.IRenderContext;
 import net.refractions.udig.project.render.IRenderMetricsFactory;
 
 
-/**
- * Used to describe the rendering abilities of BasicWMSRenderer2.
- * @author Richard Gould
- */
 public class BasicWMTMetrics extends AbstractRenderMetrics {
-    
-    
-	/**
-     * Construct <code>BasicWMSMetrics2</code>.
-     *
-     * @param context2
-     * @param factory
-     */
+
     public BasicWMTMetrics( IRenderContext context2, BasicWMTMetricsFactory factory) {
         super(context2, factory, Arrays.asList(new String[0]));
         
@@ -51,7 +40,6 @@ public class BasicWMTMetrics extends AbstractRenderMetrics {
     public boolean canAddLayer( ILayer layer ) {
         return false;
     }
-
 
     public boolean canStyle( String SyleID, Object value ) {
        return false;

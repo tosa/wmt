@@ -30,18 +30,16 @@ import net.refractions.udig.catalog.CatalogPlugin;
 import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.internal.PreferenceConstants;
 import net.refractions.udig.catalog.internal.wms.WmsPlugin;
-import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
+import net.refractions.udig.catalog.internal.wmt.tile.TileRangeOnDisk;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTileImageReadWriter;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTileSetWrapper;
-import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerProperties;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.catalog.wmsc.server.Tile;
 import net.refractions.udig.catalog.wmsc.server.TileListener;
 import net.refractions.udig.catalog.wmsc.server.TileRange;
 import net.refractions.udig.catalog.wmsc.server.TileRangeInMemory;
-//import net.refractions.udig.catalog.wmsc.server.TileRangeOnDisk;
-import net.refractions.udig.catalog.internal.wmt.tile.TileRangeOnDisk;
 import net.refractions.udig.catalog.wmsc.server.TileSet;
 import net.refractions.udig.catalog.wmsc.server.TileWorkerQueue;
 import net.refractions.udig.catalog.wmsc.server.WMSTile;
@@ -51,6 +49,7 @@ import net.refractions.udig.project.internal.render.impl.RendererImpl;
 import net.refractions.udig.project.render.IMultiLayerRenderer;
 import net.refractions.udig.project.render.RenderException;
 import net.refractions.udig.render.internal.wmsc.basic.WMSCTileCaching;
+import net.refractions.udig.render.wmt.basic.WMTPlugin;
 import net.refractions.udig.render.wmt.basic.internal.Messages;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -64,12 +63,10 @@ import org.geotools.referencing.CRS;
 import org.geotools.renderer.lite.gridcoverage2d.GridCoverageRenderer;
 import org.geotools.styling.RasterSymbolizer;
 import org.geotools.styling.StyleBuilder;
-import org.opengis.geometry.MismatchedDimensionException;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
-import org.opengis.referencing.operation.Transformation;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
@@ -108,8 +105,6 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
      * Construct a new BasicWMTRenderer
      */
     public BasicWMTRenderer() {
-        System.out.println("BasicWMTRenderer is called!");
-     
     }
 
     @Override
@@ -123,10 +118,10 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         render(graphics, getRenderBounds(), monitor);
     }
 
-    public synchronized void render( Graphics2D destination, Envelope bounds2,
+    public void render( Graphics2D destination, Envelope bounds2,
             IProgressMonitor monitor ) throws RenderException {
-
-        System.out.println("render");
+        WMTPlugin.trace("[BasicWMTRender.render] is called"); //$NON-NLS-1$
+        
         if (monitor == null){
             monitor = new NullProgressMonitor();
         }
@@ -139,19 +134,27 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         
         IGeoResource resource = layer.findGeoResource(WMTSource.class);
         
-        if (resource == null) return;
+        if (resource == null) {
+            setState(DONE);
+            monitor.done();
+            
+            return;
+        }
         
         try {
             WMTSource wmtSource = null;
             try {            
                 wmtSource = resource.resolve(WMTSource.class, null);
             } catch (Exception e) {
-                // TODO Handle IOException
                 wmtSource = null;
             }
             
-            // todo: error.. etc
-            if (wmtSource == null) return;
+            if (wmtSource == null) {
+                setState(DONE);
+                monitor.done();
+                
+                return;
+            }
             
             //region Layer properties
             WMTLayerProperties layerProperties = new WMTLayerProperties((StyleBlackboard) layer.getStyleBlackboard());
@@ -189,11 +192,11 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             // Get the mapExtent in the tiles CRS
             ReferencedEnvelope mapExtentProjected = getProjectedEnvelope(mapExtent, 
                     crsTiles, transformMapToTileCrs);
-                        
+            //endregion
+            
             // Scale
             double scale = getContext().getViewportModel().getScaleDenominator();
-            System.out.println("Scale: " +  scale + " -  zoom-level: " + wmtSource.getZoomLevelFromMapScale(scale, WMTSource.SCALE_FACTOR) + 
-                    " " + wmtSource.getZoomLevelToUse(scale, WMTSource.SCALE_FACTOR, false, layerProperties));
+            WMTPlugin.trace("[BasicWMTRender.render] Scale: " + scale); //$NON-NLS-1$
             
             //Find tiles
             Map<String, Tile> tileList = wmtSource.cutExtentIntoTiles(mapExtentProjected, scale, WMTSource.SCALE_FACTOR, false, layerProperties);
@@ -209,7 +212,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                 layer.setStatus(ILayer.WARNING);
                 layer.setStatusMessage(Messages.WARNING_TOO_MANY_TILES);
                 
-                System.out.println("tilesCount > WARNING_MANY_TILES");
+                WMTPlugin.trace("[BasicWMTRender.render] Set WARNING_TOO_MANY_TILES"); //$NON-NLS-1$
             }
             
             // Download and display tiles
@@ -227,8 +230,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                 
                 range = new TileRangeOnDisk(null, tileset, mapExtentProjected, tileList, 
                         requestTileWorkQueue, writeTileWorkQueue, tileReadWriter);
-            }
-            else {
+            } else {
                 range = new TileRangeInMemory(null, tileset, mapExtentProjected, tileList, requestTileWorkQueue);
             }
             
@@ -265,11 +267,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                         renderTile(destination, (WMTTile) tile, style, crsMap, crsTilesProjected, 
                             transformTileCrsToTilesProjected, transformTilesProjectedToMap);
                     } catch(Exception exc) {
-                        System.out.println("rendertile failed: " + tile.getId()); //$NON-NLS-1$
-                        exc.printStackTrace();
-                        System.out.println();
-                        //throw exc;
-                        // todo: error msg
+                        WMTPlugin.log("[BasicWMTRender.render] renderTile failed (1): " + tile.getId(), exc); //$NON-NLS-1$
                     }
                     monitor.worked(tileWorth);  // inc the monitor work by 1 tile
                 }
@@ -306,9 +304,9 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                     if (monitor.isCanceled()) {
                         setState(CANCELLED);       
                         if (testing) {
-                            System.out.println("monitor CANCELED!!!: "+thisid); //$NON-NLS-1$
+                            System.out.println("monitor CANCELED!!! (tilesToDraw_queue.clear()-1): "+thisid); //$NON-NLS-1$
                         }
-                        tilesToDraw_queue.clear();
+                        tilesToDraw_queue.clear(); // todo: really clear the list?
                         return;
                     } 
                     
@@ -337,10 +335,10 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                     if (monitor.isCanceled()) {
                         setState(CANCELLED);     
                         if (testing) {
-                            System.out.println("monitor CANCELED!!!: "+thisid); //$NON-NLS-1$
+                            System.out.println("monitor CANCELED!!! (tilesToDraw_queue.clear()-2): "+thisid); //$NON-NLS-1$
                         }
                         
-                        tilesToDraw_queue.clear();
+                        tilesToDraw_queue.clear(); // todo: same here, really clear?!
                         return;
                     }
                     
@@ -350,6 +348,8 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                     // can result in listeners being notified the same tile is ready multiple
                     // times but we don't want to draw it more than once per render cycle)
                     //ReferencedEnvelope viewbounds = getContext().getViewportModel().getBounds();
+                    
+                    // todo: check if we are on the same zoom-level!
                     
                     ReferencedEnvelope viewbounds = getProjectedEnvelope(getContext().getImageBounds(), 
                             crsTiles, transformMapToTileCrs);
@@ -363,12 +363,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                                     transformTileCrsToTilesProjected, transformTilesProjectedToMap);
                             
                         } catch(Exception exc) {
-                            System.out.println();
-                            System.out.println("rendertile failed: " + tile.getId());
-                            exc.printStackTrace();
-                            System.out.println();
-                            //throw exc;
-                            //todo : error msg.
+                            WMTPlugin.log("[BasicWMTRender.render] renderTile failed (2): " + tile.getId(), exc); //$NON-NLS-1$
                         }
                         monitor.worked(tileWorth);  // inc the monitor work by 1 tile
                         setState(RENDERING); // tell renderer new data is ready                
@@ -524,8 +519,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                 return CRS.findMathTransform(fromCRS, toCRS);
             } catch(Exception exc) {
                 // no transformation possible
-                throw new RenderException("reprojecting error");
-                //todo: nice error message
+                throw new RenderException("Reprojecting error " + exc.getMessage()); //$NON-NLS-1$
             }
         }
         
@@ -559,8 +553,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                 try {
                     return envelope.transform(destinationCRS, false);
                 } catch(Exception exc2) {
-                    throw new RenderException("transformation error: " + exc2.getMessage());
-                    //todo: nice error message
+                    throw new RenderException("Transformation error: " + exc2.getMessage()); //$NON-NLS-1$
                 }
             }
         }
@@ -610,6 +603,6 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
     }
     
     public void refreshImage() throws RenderException {
-        System.out.println("refreshImage");
+        WMTPlugin.trace("[BasicWMTRenderer.refreshImage] is called"); //$NON-NLS-1$
     }
 }
