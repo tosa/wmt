@@ -20,7 +20,7 @@ public class WMTServiceExtension implements ServiceExtension {
             return null;
         
         if( params.containsKey(KEY)){
-            WMTPlugin.trace("[WMTService.createService] " + ((URL) params.get(WMTServiceExtension.KEY)), null); //$NON-NLS-1$
+            WMTPlugin.trace("[WMTService.createService] " + params.get(WMTServiceExtension.KEY), null); //$NON-NLS-1$
          
             return new WMTService(params);
         }

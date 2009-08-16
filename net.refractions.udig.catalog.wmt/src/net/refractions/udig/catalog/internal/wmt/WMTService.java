@@ -2,6 +2,7 @@ package net.refractions.udig.catalog.internal.wmt;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -14,6 +15,7 @@ import net.refractions.udig.catalog.IServiceInfo;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASourceManager;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSourceFactory;
+import net.refractions.udig.core.internal.CorePlugin;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -39,10 +41,21 @@ public class WMTService extends IService {
     private URL url;    
 
     public WMTService(Map<String, Serializable> params) {
-        if (params != null)
-        {
-            this.params = params;
-            this.url = (URL) params.get(WMTServiceExtension.KEY);
+        this.params = params;
+        
+        if (params != null && params.containsKey(WMTServiceExtension.KEY))
+        {     
+            if (params.get(WMTServiceExtension.KEY) instanceof URL) {
+                this.url = (URL) params.get(WMTServiceExtension.KEY);
+            } else {
+                try {
+                    this.url = new URL(null, (String) params.get(WMTServiceExtension.KEY), CorePlugin.RELAXED_HANDLER);
+                }
+                catch(MalformedURLException exc) {
+                    WMTPlugin.log("[WMTService] Could not create url: " + params.get(WMTServiceExtension.KEY) , exc); //$NON-NLS-1$
+                    this.url = null;
+                } 
+            }
         }
     }
     
