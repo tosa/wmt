@@ -20,10 +20,7 @@ import org.eclipse.osgi.util.NLS;
 
 public class Messages extends NLS {
 	private static final String BUNDLE_NAME = "net.refractions.udig.catalog.wmt.internal.messages"; //$NON-NLS-1$
-
 	
-	public static final String MapGraphicService_title = "Titel";
-    public static final String MapGraphicService_description = "Description";
 	public static String WMSCServiceExtension_nottiled;
     public static String WMSCWizardPage_WMSCTitle;
     public static String WMSGeoResourceImpl_bounds_unavailable;
@@ -73,6 +70,15 @@ public class Messages extends NLS {
     public static String Wizard_CloudMade_PreviewId;
     public static String Wizard_CloudMade_PreviewAuthor;
     public static String Wizard_CloudMade_PreviewGetFullMap;
+    
+    public static String Wizard_Osm_Info;
+    public static String Wizard_Osm_InfoLink;
+    
+    public static String Wizard_Mq_Info;
+    public static String Wizard_Mq_InfoLink;
+    
+    public static String Wizard_Nasa_Info;
+    public static String Wizard_Nasa_InfoLink;
 	
 	static {
 		// initialize resource bundle
