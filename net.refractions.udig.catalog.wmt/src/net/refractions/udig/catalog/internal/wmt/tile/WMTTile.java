@@ -158,8 +158,9 @@ public abstract class WMTTile implements Tile{
                     System.out.println("request delaying for: "+delay); //$NON-NLS-1$
                     Thread.sleep(delay);  // simulate latency
                 }
-                WMTPlugin.log("WMT GetTile: "+ getUrl(), null);  //$NON-NLS-1$
-                bufImage = ImageIO.read(getUrl());
+                URL url = getUrl();
+                WMTPlugin.log("WMT GetTile: "+ url, null);  //$NON-NLS-1$
+                bufImage = ImageIO.read(url);
                 if (bufImage != null) {
                     setBufferedImageInternal(bufImage);
                     setTileState(WMTTile.OK);

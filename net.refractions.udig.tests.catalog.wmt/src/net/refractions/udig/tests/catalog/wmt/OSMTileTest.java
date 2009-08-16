@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile;
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName;
 import net.refractions.udig.catalog.internal.wmt.tile.OSMTile.OSMTileName.OSMZoomLevel;
-import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMMapnikSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.OSMSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;

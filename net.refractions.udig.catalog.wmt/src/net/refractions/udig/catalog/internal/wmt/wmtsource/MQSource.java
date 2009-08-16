@@ -95,6 +95,16 @@ public class MQSource extends WMTSource {
     public String getFileFormat() {
         return "gif"; //$NON-NLS-1$
     }
+            
+    @Override
+    public int getTileHeight() {
+        return TILESIZE_HEIGHT;
+    }
+
+    @Override
+    public int getTileWidth() {
+        return TILESIZE_WIDTH;
+    }
     
     /*
      * MapQuest scales

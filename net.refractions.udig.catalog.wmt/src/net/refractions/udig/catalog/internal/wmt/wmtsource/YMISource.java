@@ -2,6 +2,7 @@ package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
 import java.util.Map;
 
+import net.refractions.udig.catalog.internal.wmt.tile.YMITile;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
 import net.refractions.udig.catalog.internal.wmt.ui.properties.WMTLayerProperties;
 import net.refractions.udig.catalog.wmsc.server.Tile;
@@ -10,12 +11,30 @@ import org.geotools.geometry.jts.ReferencedEnvelope;
 
 public class YMISource extends WMTSource {
     public static String NAME = "Yahoo! Map Image"; //$NON-NLS-1$
+    
+    private static WMTTileFactory tileFactory = new YMITile.YMITileFactory();
+    
+    public static final int TILESIZE = 500;
 
     protected YMISource() {
-        System.out.println(NAME);
         setName(NAME); 
     }
     
+    @Override
+    public WMTTileFactory getTileFactory() {
+        return tileFactory;
+    }
+            
+    @Override
+    public int getTileHeight() {
+        return TILESIZE;
+    }
+
+    @Override
+    public int getTileWidth() {
+        return TILESIZE;
+    }
+
     @Override
     public Map<String, Tile> cutExtentIntoTiles( ReferencedEnvelope extent, double scale,
             int scaleFactor, boolean recommendedZoomLevel, WMTLayerProperties layerProperties ) {
@@ -50,11 +69,6 @@ public class YMISource extends WMTSource {
     @Override
     public double[] getScaleList() { 
         return YMISource.scaleList;
-    }
-
-    @Override
-    public WMTTileFactory getTileFactory() {
-        return null;
     }
 
 }

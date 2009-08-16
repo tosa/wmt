@@ -94,7 +94,8 @@ public class WMTPlugin extends AbstractUIPlugin {
      */
     public static void log( String message, Throwable t ) {
         int status = t instanceof Exception || message != null ? IStatus.ERROR : IStatus.WARNING;
-        getDefault().getLog().log(new Status(status, ID, IStatus.OK, message, t));
+        if (getDefault() != null)
+            getDefault().getLog().log(new Status(status, ID, IStatus.OK, message, t));
     }
     /**
      * Messages that only engage if getDefault().isDebugging()
@@ -110,7 +111,7 @@ public class WMTPlugin extends AbstractUIPlugin {
      * @param e 
      */
     public static void trace( String message, Throwable e) {
-        if( getDefault().isDebugging() ) {
+        if(getDefault() != null && getDefault().isDebugging() ) {
             if( message != null ) System.out.println( message );
             if( e != null ) e.printStackTrace();
         }
@@ -127,7 +128,7 @@ public class WMTPlugin extends AbstractUIPlugin {
      * @return true if -debug is on for this plugin 
      */
     public static boolean isDebugging(final String trace){
-        return getDefault().isDebugging() &&
+        return getDefault() != null && getDefault().isDebugging() &&
             "true".equalsIgnoreCase(Platform.getDebugOption(trace)); //$NON-NLS-1$    
     }
     
