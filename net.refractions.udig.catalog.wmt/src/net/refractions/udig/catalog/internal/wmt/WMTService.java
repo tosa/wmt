@@ -83,9 +83,7 @@ public class WMTService extends IService {
      *      org.eclipse.core.runtime.IProgressMonitor)
      */
     @Override
-    public <T> T resolve( Class<T> adaptee, IProgressMonitor monitor ) throws IOException {
-        System.out.println("WMTService.resolve");
-        
+    public <T> T resolve( Class<T> adaptee, IProgressMonitor monitor ) throws IOException {        
         if (monitor == null)
             monitor = new NullProgressMonitor();
 
