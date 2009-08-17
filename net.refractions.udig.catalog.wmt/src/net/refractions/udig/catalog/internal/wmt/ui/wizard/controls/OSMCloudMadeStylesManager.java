@@ -136,10 +136,20 @@ public class OSMCloudMadeStylesManager {
 		
 		private List<CloudMadeStyle> styles;
 		
-		private static final  String stylePatternString = 
-			"(\\{)(\"name\": )(\".*?\")(, \"author\": )(\".*?\")(, \"tile_cache\": )(\\d+)(, \"id\": )(\\d+)(\\})"; //$NON-NLS-1$
+		private static final String stylePatternString = "(\\{)([^\\}]*)(\\})"; //$NON-NLS-1$
 	    private static final Pattern stylePattern = Pattern.compile(
-	    		stylePatternString, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+	    		stylePatternString, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);	    
+	    private static final String authorPatternString = "(\"author\": )(\".*?\")"; //$NON-NLS-1$
+	    private static final Pattern authorPattern = Pattern.compile(
+	            authorPatternString, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+	    private static final String namePatternString = "(\"name\": )(\".*?\")"; //$NON-NLS-1$
+        private static final Pattern namePattern = Pattern.compile(
+                namePatternString, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+        private static final String idPatternString = "(\"id\": )(\\d+)"; //$NON-NLS-1$
+        private static final Pattern idPattern = Pattern.compile(
+                idPatternString, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+	    
+	    
         private IPreferenceStore preferences;
 		
 	    public CloudMadeStyleGroup(String requestUrl) {
@@ -267,13 +277,30 @@ public class OSMCloudMadeStylesManager {
 	        Matcher matcher = stylePattern.matcher(rawStyles);
 	        
 	        while (matcher.find()) {
-	            String nameText = getStringWithoutQuotes(matcher.group(3)).trim();
-	            String authorText = getStringWithoutQuotes(matcher.group(5)).trim();
-	            String idText = matcher.group(9).trim();
+	            CloudMadeStyle style = getStyleFromString(matcher.group(2));
 	            
-	            CloudMadeStyle style = new CloudMadeStyle(idText, nameText, authorText);
-	            styles.add(style);	            
+	            if (style != null) {
+	                styles.add(style);
+	            }	            
 	        }
+		}
+		
+		private CloudMadeStyle getStyleFromString(String rawStyle) {
+		    Matcher matcherName = namePattern.matcher(rawStyle);
+            Matcher matcherId = idPattern.matcher(rawStyle);
+            Matcher matcherAuthor = authorPattern.matcher(rawStyle);
+            
+            if (matcherName.find() && matcherId.find() && matcherAuthor.find()) {
+                String nameText = getStringWithoutQuotes(matcherName.group(2)).trim();
+                String authorText = getStringWithoutQuotes(matcherAuthor.group(2)).trim();
+                String idText = matcherId.group(2).trim();
+                
+                CloudMadeStyle style = new CloudMadeStyle(idText, nameText, authorText);
+                
+                return style;
+            }
+            
+            return null;
 		}
 		
 		private String getStringWithoutQuotes(String s) {

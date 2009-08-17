@@ -16,7 +16,6 @@ public class MQSource extends WMTSource {
     private static MQAPIWrapper apiWrapper = null;
     
     protected MQSource() {
-        System.out.println(NAME);
         setName(NAME); 
     }
     
