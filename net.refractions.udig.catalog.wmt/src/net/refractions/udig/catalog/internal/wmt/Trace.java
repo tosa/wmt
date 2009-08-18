@@ -23,6 +23,8 @@ public interface Trace {
         "net.refractions.udig.catalog.wmt/debug/nasa"; //$NON-NLS-1$   
     public static final String MQ =
         "net.refractions.udig.catalog.wmt/debug/mq"; //$NON-NLS-1$   
+    public static final String WW = 
+        "net.refractions.udig.catalog.wmt/debug/ww"; //$NON-NLS-1$ 
     public static final String WIZARD =
         "net.refractions.udig.catalog.wmt/debug/wizard"; //$NON-NLS-1$   
 }
