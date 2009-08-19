@@ -16,13 +16,15 @@ import org.jdom.Element;
  */
 public class QuadTileSet {
     private String name;
+    private String id;
     private ReferencedEnvelope bbox;
     
     private ImageAccessor accessor;
     
     
-    public QuadTileSet(Element xmlElement) throws Exception {
+    public QuadTileSet(Element xmlElement, String id) throws Exception {
         this.name = xmlElement.getChildText("Name"); //$NON-NLS-1$
+        this.id = LayerSet.constructId(id, name);
         
         parseBbox(xmlElement.getChild("BoundingBox")); //$NON-NLS-1$
         parseImageAccessor(xmlElement.getChild("ImageAccessor")); //$NON-NLS-1$
@@ -78,5 +80,9 @@ public class QuadTileSet {
 
     public int getTileSize() {
         return accessor.getTileSize();
+    }
+
+    public String getId() {
+        return id;
     }
 }

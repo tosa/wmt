@@ -17,6 +17,7 @@
 package net.refractions.udig.render.internal.wmt.basic;
 
 import net.refractions.udig.catalog.internal.wmt.WMTGeoResource;
+import net.refractions.udig.catalog.internal.wmt.ww.WWGeoResource;
 import net.refractions.udig.project.render.AbstractRenderMetrics;
 import net.refractions.udig.project.render.IRenderContext;
 import net.refractions.udig.project.render.IRenderMetricsFactory;
@@ -26,7 +27,8 @@ public class BasicWMTMetricsFactory implements IRenderMetricsFactory {
 
 
     public boolean canRender(IRenderContext toolkit) {
-        return (toolkit.getLayer().hasResource(WMTGeoResource.class));
+        return toolkit.getLayer().hasResource(WMTGeoResource.class) || 
+                toolkit.getLayer().hasResource(WWGeoResource.class);
     }
 
     /**

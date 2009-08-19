@@ -54,6 +54,10 @@ public class WWSource extends WMTSource{
     public int getTileWidth() {
         return getTileHeight();
     }
+    
+    public String getId() {
+        return quadTileSet.getId();
+    }
 
     public WWZoomLevel getZoomLevel(int index) {
         return quadTileSet.getZoomLevel(index);

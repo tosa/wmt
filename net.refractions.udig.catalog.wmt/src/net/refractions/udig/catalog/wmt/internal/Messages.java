@@ -20,29 +20,7 @@ import org.eclipse.osgi.util.NLS;
 
 public class Messages extends NLS {
 	private static final String BUNDLE_NAME = "net.refractions.udig.catalog.wmt.internal.messages"; //$NON-NLS-1$
-	
-	public static String WMSCServiceExtension_nottiled;
-    public static String WMSCWizardPage_WMSCTitle;
-    public static String WMSGeoResourceImpl_bounds_unavailable;
-	public static String WMSGeoResourceImpl_downloading_icon;
-	public static String WMSGeoResourceImpl_acquiring_task;
-    public static String WMSServiceExtension_badService;
-    public static String WMSServiceExtension_needsKey;
-    public static String WMSServiceExtension_nullURL;
-    public static String WMSServiceExtension_nullValue;
-    public static String WMSServiceExtension_protocol;
-	public static String WMSWizardPage_connectionProblem;
-	public static String WMSWizardPage_serverConnectionError;
-	public static String WMSWizardPage_title;
-	public static String WMSServiceImpl_broken;
-	public static String WMSWizardPage_error_invalidURL;
-	public static String WMSServiceImpl_could_not_connect;
-	public static String WMSWizardPage_label_url_text;
-	public static String WMSServiceImpl_connecting_to;
-	public static String WMSCTileUtils_preloadtitle;
-	public static String WMSCTileUtils_preloadtask;
-	public static String WMSCTileUtils_preloadtasksub;
-	
+		
 	public static String Properties_Layer_Title;
     public static String Properties_Layer_GroupBox;
     public static String Properties_Layer_AutomaticSelection;
@@ -57,6 +35,7 @@ public class Messages extends NLS {
     public static String ZoomLevelSwitcher_ZoomIn;
     public static String ZoomLevelSwitcher_ZoomOut;
     
+    public static String Wizard_Title;
     public static String Wizard_CloudMade_StyleFromGroup;
     public static String Wizard_CloudMade_GroupCloudMade;
     public static String Wizard_CloudMade_GroupFeatured;
@@ -79,6 +58,22 @@ public class Messages extends NLS {
     
     public static String Wizard_Nasa_Info;
     public static String Wizard_Nasa_InfoLink;
+    
+    public static String Wizard_WW_Title;
+    public static String Wizard_WW_Description;
+    public static String Wizard_WW_Url;
+    public static String Wizard_WW_LocalFile;
+    public static String Wizard_WW_SelectFile;
+    public static String Wizard_WW_ConnectionProblem;
+    public static String Wizard_WW_Error_InvalidURL;
+    
+    public static String WWServiceExtension_NeedsKey;
+    public static String WWServiceExtension_NullValue;
+    public static String WWServiceExtension_NullURL;
+    public static String WWServiceExtension_Protocol;
+    
+    public static String WWService_Connecting_to;
+    public static String WWService_Could_not_connect;
 	
 	static {
 		// initialize resource bundle

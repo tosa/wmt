@@ -60,7 +60,7 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
     
 
     public WMTWizardPage() {
-        super(Messages.WMSWizardPage_title); 
+        super(Messages.Wizard_Title); 
         
         serviceExtension = new WMTServiceExtension();
     }

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.0"?>
 <plugin>
-
   <extension
   		 id="net.refractions.udig.catalog.internal.wmt"
          name="Service Extentions"
@@ -23,6 +22,7 @@
           name="%wizard.name">
     </wizardPage>
   </extension> 
+  
   <extension
          point="org.eclipse.ui.propertyPages">
       <page
@@ -49,6 +49,7 @@
           type="net.refractions.udig.project.ILayer">
     </propertyTester>
   </extension>
+  
   <extension
          point="net.refractions.udig.project.style">
       <style
@@ -57,6 +58,7 @@
             name="WMT Style Properties">
       </style>
   </extension>  
+  
   <extension
         point="org.eclipse.ui.views">
      <view
@@ -82,4 +84,24 @@
         </menuContribution>
   </extension>   
   -->
+  
+    <extension
+         point="net.refractions.udig.catalog.ServiceExtension">
+      <service
+            class="net.refractions.udig.catalog.internal.wmt.ww.WWServiceExtension"
+            id="net.refractions.udig.catalog.internal.wmt.ww.service"
+            name="WW Service Extension"/>
+  </extension>
+  <extension
+       point="net.refractions.udig.catalog.ui.connectionFactory">
+    <factory class="net.refractions.udig.catalog.internal.wmt.ui.wizard.WWConnectionFactory"
+          id="net.refractions.udig.catalog.ui.WW"/>
+    <wizardPage
+          banner="icons/wizban/wms_wiz.gif"
+          class="net.refractions.udig.catalog.internal.wmt.ui.wizard.WWWizardPage"
+          description="%wizardWW.description"
+          icon="icons/etool16/wms_wiz.gif"
+          name="%wizardWW.name">
+    </wizardPage>
+  </extension> 
 </plugin>

@@ -29,7 +29,7 @@ public class QuadTileSetTest extends TestCase {
             
             Document dom = builder.build(connection.getInputStream());
             
-            rootElement = dom.getRootElement();     
+            rootElement = dom.getRootElement();  
         }
         
         return rootElement;         
@@ -38,7 +38,7 @@ public class QuadTileSetTest extends TestCase {
     public void testQuadTileConstruct() throws Exception {
         Element rootElement = getRootElement();
         
-        QuadTileSet quadTileSet = new QuadTileSet(rootElement.getChild("ChildLayerSet").getChild("QuadTileSet"));
+        QuadTileSet quadTileSet = new QuadTileSet(rootElement.getChild("ChildLayerSet").getChild("QuadTileSet"), "");
         
         assertEquals("Bathymetry (30 arcsec)", quadTileSet.getName());
         assertEquals("ReferencedEnvelope[-180.0 : 180.0, -90.0 : 90.0]", quadTileSet.getBounds().toString());
@@ -66,7 +66,7 @@ public class QuadTileSetTest extends TestCase {
     
     public void testTiles() throws Exception {
         Element rootElement = getRootElement();        
-        QuadTileSet quadTileSet = new QuadTileSet(rootElement.getChild("ChildLayerSet").getChild("QuadTileSet"));
+        QuadTileSet quadTileSet = new QuadTileSet(rootElement.getChild("ChildLayerSet").getChild("QuadTileSet"), "");
         WWSource wwSource = new WWSource(quadTileSet);
         
         WWTile tile1 = new WWTile(0, 0, wwSource.getZoomLevel(0), wwSource);        

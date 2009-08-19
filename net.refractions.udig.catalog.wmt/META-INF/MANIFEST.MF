@@ -12,7 +12,8 @@ Export-Package: net.refractions.udig.catalog.internal.wmt,
  net.refractions.udig.catalog.internal.wmt.ui.wizard,
  net.refractions.udig.catalog.internal.wmt.ui.wizard.controls,
  net.refractions.udig.catalog.internal.wmt.wmtsource,
- net.refractions.udig.catalog.internal.wmt.wmtsource.ww
+ net.refractions.udig.catalog.internal.wmt.wmtsource.ww,
+ net.refractions.udig.catalog.internal.wmt.ww
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  net.refractions.udig.catalog,

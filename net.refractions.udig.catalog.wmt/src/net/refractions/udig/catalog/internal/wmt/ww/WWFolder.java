@@ -1,0 +1,161 @@
+/* uDig - User Friendly Desktop Internet GIS client
+ * http://udig.refractions.net
+ * (C) 2004, Refractions Research Inc.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ */
+package net.refractions.udig.catalog.internal.wmt.ww;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.LinkedList;
+import java.util.List;
+
+import net.refractions.udig.catalog.CatalogPlugin;
+import net.refractions.udig.catalog.ID;
+import net.refractions.udig.catalog.IResolve;
+import net.refractions.udig.catalog.IResolveFolder;
+import net.refractions.udig.catalog.IResolveManager;
+import net.refractions.udig.catalog.IService;
+import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.ww.LayerSet;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.ww.QuadTileSet;
+
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jface.resource.ImageDescriptor;
+
+/**
+ * Since WMSFolder is not a IGeoResource but it shares most of its code with
+ * {@link WWGeoResource} this class exists for sharing that code. If mixins were permitted in
+ * Java this wouldn't be necessary... But it is.
+ * 
+ * @author jesse
+ * @since 1.1.0
+ */
+public class WWFolder implements IResolveFolder {
+
+    private WWService service;
+    private IResolve parent;
+    private LayerSet layerSet;
+    private List<IResolve> members;
+    private URL identifier;
+
+
+    /**
+     * Construct <code>WMSGeoResourceImpl</code>.
+     * 
+     * @param service
+     * @param parent the parent Georesource may be null if parent is the service.
+     * @param layer
+     */
+    public WWFolder( WWService service, IResolve parent, LayerSet layerSet) {
+        this.service = service;
+        if (parent == null) {
+            this.parent = service;
+        } else {
+            this.parent = parent;
+        }
+        this.layerSet = layerSet;
+        
+        members = new LinkedList<IResolve>();
+        
+        // add QuadTileSets
+        List<QuadTileSet> quadTileSets = layerSet.getQuadTileSets();
+        for (QuadTileSet quadTileSet : quadTileSets) {
+            members.add(new WWGeoResource(service, this, quadTileSet));
+        }
+        
+        // add LayerSets
+        List<LayerSet> layerSets = layerSet.getChildLayerSets();
+        for (LayerSet childLayerSet : layerSets) {
+            members.add(new WWFolder(service, this, childLayerSet));
+        }
+
+        try {
+            identifier = new URL(service.getIdentifier().toString() + "#" + layerSet.getId()); //$NON-NLS-1$
+
+        } catch (Throwable e) {
+            WMTPlugin.log(null, e);
+            identifier = service.getIdentifier();
+        }
+    }
+
+    public <T> boolean canResolve( Class<T> adaptee ) {
+        if (adaptee == null) {
+            return false;
+        }
+
+        if (adaptee.isAssignableFrom(WWFolder.class)
+                || adaptee.isAssignableFrom(LayerSet.class)) {
+            return true;
+        }
+
+        return CatalogPlugin.getDefault().getResolveManager().canResolve(this, adaptee);
+    }
+    
+    public void dispose( IProgressMonitor monitor ) {
+    }
+
+    public URL getIdentifier() {
+        return identifier;
+    }
+    public ID getID() {
+        return new ID( getIdentifier() );        
+    }
+    public Throwable getMessage() {
+        return null;
+    }
+
+    public Status getStatus() {
+        return Status.CONNECTED;
+    }
+
+    public List<IResolve> members( IProgressMonitor monitor ) throws IOException {
+        return members;
+    }
+
+    public IResolve parent( IProgressMonitor monitor ) throws IOException {
+        return parent;
+    }
+
+    public <T> T resolve( Class<T> adaptee, IProgressMonitor monitor ) throws IOException {
+        if (adaptee == null) {
+            throw new NullPointerException();
+        }
+
+        if (adaptee.isAssignableFrom(WWFolder.class)) {
+            return adaptee.cast(this);
+        }
+
+        if (adaptee.isAssignableFrom(LayerSet.class)) {
+            return adaptee.cast(layerSet);
+        }
+
+        IResolveManager rm = CatalogPlugin.getDefault().getResolveManager();
+        if (rm.canResolve(this, adaptee)) {
+            return rm.resolve(this, adaptee, monitor);
+        }
+        return null; // no adapter found (check to see if ResolveAdapter is registered?)
+    }
+
+    public String getTitle() {
+        return layerSet.getName();
+    }
+
+    public IService getService( IProgressMonitor monitor ) {
+        return service;
+    }
+
+    public ImageDescriptor getIcon(IProgressMonitor monitor) {
+        return null;
+    }
+
+}
