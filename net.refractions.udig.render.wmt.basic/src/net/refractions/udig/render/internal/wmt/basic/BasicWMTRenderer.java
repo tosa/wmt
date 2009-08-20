@@ -78,7 +78,8 @@ import com.vividsolutions.jts.geom.Envelope;
  */
 public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRenderer {
     //todo: move to settings
-    private static int WARNING_TOO_MANY_TILES = 50;
+    private static int WARNING_TOO_MANY_TILES = 40;
+    private static int ERROR_TOO_MANY_TILES = 70;
     
     private static StyleBuilder styleBuilder = new StyleBuilder();
 
@@ -130,7 +131,8 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                 
         ILayer layer = getContext().getLayer();
         // assume everything will work fine
-        layer.setStatus(ILayer.DONE);
+        layer.setStatus(ILayer.DONE); 
+        layer.setStatusMessage(""); //$NON-NLS-1$
         
         IGeoResource resource = layer.findGeoResource(WMTSource.class);
         
@@ -212,12 +214,23 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                 // too many tiles, let's use the recommended zoom-level
                 tileList.clear();
                 tileList = wmtSource.cutExtentIntoTiles(mapExtentProjected, scale, WMTSource.SCALE_FACTOR, true, layerProperties);                
+                tilesCount = tileList.size();
                 
                 // show a warning about this
                 layer.setStatus(ILayer.WARNING);
                 layer.setStatusMessage(Messages.WARNING_TOO_MANY_TILES);
                 
                 WMTPlugin.trace("[BasicWMTRender.render] Set WARNING_TOO_MANY_TILES"); //$NON-NLS-1$
+            }
+                        
+            if (tilesCount > ERROR_TOO_MANY_TILES) {
+                // this is just too much, cancel
+                layer.setStatus(ILayer.ERROR);
+                layer.setStatusMessage(Messages.ERROR_TOO_MANY_TILES);
+                
+                WMTPlugin.trace("[BasicWMTRender.render] Set ERROR_TOO_MANY_TILES"); //$NON-NLS-1$
+                
+                return;                
             }
             
             // Download and display tiles

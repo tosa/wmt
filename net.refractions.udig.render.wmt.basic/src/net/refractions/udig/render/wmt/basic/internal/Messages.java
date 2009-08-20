@@ -42,6 +42,7 @@ public class Messages extends NLS {
 	public static String WMSCTilePreferencePage_maxConRequests;
 	
 	public static String WARNING_TOO_MANY_TILES;
+    public static String ERROR_TOO_MANY_TILES;
 	public static String ERROR_LAYER;
     
 	static {

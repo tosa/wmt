@@ -44,7 +44,7 @@ public class ImageAccessor {
         tileSize = Integer.parseInt(xmlElement.getChildText("TextureSizePixels")); //$NON-NLS-1$
         tileFormat = xmlElement.getChildText("ImageFileExtension"); //$NON-NLS-1$
         
-        tileService = TileService.createTileService(xmlElement);
+        tileService = TileService.createTileService(xmlElement, this);
         
         setZoomLevels();
     }

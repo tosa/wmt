@@ -30,13 +30,13 @@ public abstract class TileService {
      * @return
      * @throws Exception
      */
-    public static TileService createTileService(Element imageAccessorElement) throws Exception {
+    public static TileService createTileService(Element imageAccessorElement, ImageAccessor imageAccessor) throws Exception {
         if (imageAccessorElement.getChild("ImageTileService") != null) { //$NON-NLS-1$
             
             return new ImageTileService(imageAccessorElement.getChild("ImageTileService")); //$NON-NLS-1$
         } else if (imageAccessorElement.getChild("WMSAccessor") != null) { //$NON-NLS-1$
             
-            return new WMSTileService(imageAccessorElement.getChild("WMSAccessor")); //$NON-NLS-1$
+            return new WMSTileService(imageAccessorElement.getChild("WMSAccessor"), imageAccessor); //$NON-NLS-1$
         }
         
         throw new Exception("[TileService.createTileService] Unknown TileService"); //$NON-NLS-1$
