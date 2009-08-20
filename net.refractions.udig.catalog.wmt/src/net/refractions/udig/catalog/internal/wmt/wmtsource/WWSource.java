@@ -13,6 +13,9 @@ public class WWSource extends WMTSource{
     
     private QuadTileSet quadTileSet;
     
+    public static final ReferencedEnvelope WORLD_BOUNDS =
+        new ReferencedEnvelope(-180, 180, -90, 90, DefaultGeographicCRS.WGS84);
+    
     public WWSource(QuadTileSet quadTileSet) {
         this.quadTileSet = quadTileSet;
     }

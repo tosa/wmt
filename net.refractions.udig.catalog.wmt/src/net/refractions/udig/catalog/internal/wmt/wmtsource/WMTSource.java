@@ -363,13 +363,13 @@ public abstract class WMTSource {
      * @return The list of found tiles.
      */
     public Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale, 
-            int scaleFactor, boolean recommendedZoomLevel, WMTLayerProperties layerProperties) {
-        extent = normalizeExtent(extent);
-        
+            int scaleFactor, boolean recommendedZoomLevel, WMTLayerProperties layerProperties) {        
         // only continue, if we have tiles that cover the requested extent
         if (!extent.intersects((Envelope) getBounds())) {
             return Collections.emptyMap();
         }
+        
+        extent = normalizeExtent(extent);
         
         WMTTileFactory tileFactory = getTileFactory();
                 

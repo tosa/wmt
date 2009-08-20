@@ -3,6 +3,7 @@ package net.refractions.udig.catalog.internal.wmt.tile;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Random;
 
@@ -160,7 +161,15 @@ public abstract class WMTTile implements Tile{
                 }
                 URL url = getUrl();
                 WMTPlugin.log("WMT GetTile: "+ url, null);  //$NON-NLS-1$
-                bufImage = ImageIO.read(url);
+                
+                HttpURLConnection connection = null;
+                connection = (HttpURLConnection) url.openConnection();  
+                setConnectionParams(connection);
+
+                
+                bufImage = ImageIO.read(connection.getInputStream());
+                
+                //bufImage = ImageIO.read(url);
                 if (bufImage != null) {
                     setBufferedImageInternal(bufImage);
                     setTileState(WMTTile.OK);
@@ -195,7 +204,9 @@ public abstract class WMTTile implements Tile{
         System.out.println("// if we get here, something prevented us from setting an image");
         // if we get here, something prevented us from setting an image
         return false;
-    }    
+    }
+
+    protected void setConnectionParams(HttpURLConnection connection) {}    
 
     private BufferedImage createErrorImage() {
         BufferedImage bf = new BufferedImage(tileName.getSource().getTileWidth(), tileName.getSource().getTileHeight(), BufferedImage.TYPE_INT_ARGB);

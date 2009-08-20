@@ -1,5 +1,6 @@
 package net.refractions.udig.catalog.internal.wmt.tile;
 
+import java.net.HttpURLConnection;
 import java.net.URL;
 
 import net.refractions.udig.catalog.internal.wmt.Trace;
@@ -38,6 +39,7 @@ public class WWTile extends WMTTile {
      * Returns the bounding box of a tile by the given tile name.
      * 
      * The lower left corner of tile 0/0 is at -90,-180.
+     * see: http://worldwindcentral.com/wiki/Image:Worldwindtilesystemtmr0.png
      *  
      * @param tileName
      * @return BoundingBox for a tile
@@ -54,11 +56,11 @@ public class WWTile extends WMTTile {
     }
     
     public static double tile2lat(int row, WWTileName tileName) {       
-        return tileName.getWwSource().getBounds().getMinY() + row * tileName.getHeightInWorldUnits();     
+        return WWSource.WORLD_BOUNDS.getMinY() + row * tileName.getHeightInWorldUnits();     
     }
     
     public static double tile2lon(int col, WWTileName tileName) { 
-        return tileName.getWwSource().getBounds().getMinX() + col * tileName.getWidthInWorldUnits();            
+        return WWSource.WORLD_BOUNDS.getMinX() + col * tileName.getWidthInWorldUnits();            
     }
 
     //endregion
@@ -72,7 +74,15 @@ public class WWTile extends WMTTile {
     public WWTile getRightNeighbour() {
         return new WWTile(tileName.getRightNeighbour(), wwSource);
     }
-
+    
+    /**
+     * Put on the "WorldWind-hat":
+     * http://worldwindcentral.com/wiki/User-Agent
+     */
+    protected void setConnectionParams(HttpURLConnection connection) {
+        connection.setRequestProperty("User-Agent", "World Wind v1.4.0.0 (Microsoft Windows NT 5.1.2600.0, en-US)"); //$NON-NLS-1$ //$NON-NLS-2$
+    } 
+    
     public static class WWTileFactory extends WMTTileFactory {
 
         //region Get tile from coordinate
@@ -100,10 +110,10 @@ public class WWTile extends WMTTile {
             
             WWZoomLevel wwZoomLevel = (WWZoomLevel) zoomLevel;
             int row = WMTTileName.arithmeticMod(
-                        (int) Math.abs((lat - wwSource.getBounds().getMinY())  / wwZoomLevel.getHeightInWorldUnits()),
+                        (int) Math.abs((lat - WWSource.WORLD_BOUNDS.getMinY())  / wwZoomLevel.getHeightInWorldUnits()),
                         zoomLevel.getMaxTilePerColNumber());
             int col = WMTTileName.arithmeticMod(
-                        (int) Math.abs((lon - wwSource.getBounds().getMinX()) / wwZoomLevel.getWidthInWorldUnits()),
+                        (int) Math.abs((lon - WWSource.WORLD_BOUNDS.getMinX()) / wwZoomLevel.getWidthInWorldUnits()),
                         zoomLevel.getMaxTilePerRowNumber());
             
             WMTPlugin.debug("[WWTile.getTileFromCoordinate] " + zoomLevel.getZoomLevel() + //$NON-NLS-1$
@@ -231,14 +241,14 @@ public class WWTile extends WMTTile {
             public int calculateMaxTilePerColNumber(int zoomLevel) {
                 if (boundsOfFirstTile == null) return 0;
                 
-                return (int) Math.ceil(imageAccessor.getQuadTileSet().getBounds().getHeight() / boundsOfFirstTile.getHeight());
+                return (int) Math.ceil(WWSource.WORLD_BOUNDS.getHeight() / boundsOfFirstTile.getHeight());
             }
 
             @Override
             public int calculateMaxTilePerRowNumber(int zoomLevel) {
                 if (boundsOfFirstTile == null) return 0;
                 
-                return (int) Math.ceil(imageAccessor.getQuadTileSet().getBounds().getWidth() / boundsOfFirstTile.getWidth());
+                return (int) Math.ceil(WWSource.WORLD_BOUNDS.getWidth() / boundsOfFirstTile.getWidth());
             } 
 
             public double getScale() {

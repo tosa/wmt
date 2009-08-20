@@ -35,9 +35,9 @@ public class ImageTileService extends TileService {
         return MessageFormat.format(REQUEST, new Object[] {
                 serverUrl, 
                 dataSetName,
-                tileName.getZoomLevel(),
-                tileName.getX(),
-                tileName.getY()
+                Integer.toString(tileName.getZoomLevel()),
+                Integer.toString(tileName.getX()),
+                Integer.toString(tileName.getY())
         });
     }
 }
