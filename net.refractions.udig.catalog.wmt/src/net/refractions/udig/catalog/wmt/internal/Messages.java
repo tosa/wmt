@@ -64,6 +64,7 @@ public class Messages extends NLS {
     public static String Wizard_WW_Url;
     public static String Wizard_WW_LocalFile;
     public static String Wizard_WW_SelectFile;
+    public static String Wizard_WW_Connecting;
     public static String Wizard_WW_ConnectionProblem;
     public static String Wizard_WW_Error_InvalidURL;
     

@@ -3,6 +3,7 @@ package net.refractions.udig.catalog.internal.wmt.ui.wizard;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import net.refractions.udig.catalog.wmt.internal.Messages;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.dialogs.IDialogSettings;
+import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
@@ -350,10 +352,27 @@ public class WWWizardPage extends AbstractUDIGImportPage implements ModifyListen
         Collection<IService> services = getServices();
         
         for (IService service : services) {
+            final IService runService = service;
+            
             try {
-                // try to load the file
-                service.members(null);
-            } catch(IOException exc) {
+                getContainer().run(false, true, 
+                        new IRunnableWithProgress(){
+
+                            public void run( IProgressMonitor monitor ) 
+                                    throws InvocationTargetException, InterruptedException {
+                                monitor.beginTask(Messages.Wizard_WW_Connecting, IProgressMonitor.UNKNOWN);
+                
+                                // try to load the file
+                                try {
+                                    runService.members(null);
+                                } catch (IOException e) {
+                                    throw (InvocationTargetException) new InvocationTargetException(e, e.getLocalizedMessage());
+                                    
+                                }
+                                
+                                monitor.done();
+                            }});
+            } catch(Exception exc) {
                 // no, this is not going to work, cancel
                 setErrorMessage(Messages.WWService_NoValidFile); 
                 setPageComplete(false);
