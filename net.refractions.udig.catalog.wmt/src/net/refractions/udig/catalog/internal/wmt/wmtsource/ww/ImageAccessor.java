@@ -14,7 +14,7 @@ import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.jdom.Element;
 
 /**
- * Represents a <ImageAccessor> of a <QuadTileSet>
+ * Represents a &lt;ImageAccessor&gt; of a &lt;QuadTileSet&gt;
  * see: http://worldwindxml.worldwindcentral.com/zoomit.xml?version=1.4.0.0
  * 
  * @author to.srwn

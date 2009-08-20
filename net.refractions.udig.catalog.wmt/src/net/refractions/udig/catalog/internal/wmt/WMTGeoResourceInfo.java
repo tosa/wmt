@@ -26,7 +26,7 @@ class WMTGeoResourceInfo extends IGeoResourceInfo {
     /** WMTResourceInfo resource field */
     private final WMTGeoResource resource;
     
-    WMTGeoResourceInfo(WMTGeoResource resource, IProgressMonitor monitor ) throws IOException {
+    WMTGeoResourceInfo(WMTGeoResource resource, IProgressMonitor monitor) throws IOException {
         this.resource = resource;
         
         this.title = this.resource.getTitle();        

@@ -36,7 +36,7 @@ public abstract class WMTTileName {
     }
     
     public String getId() {
-        return source.getName() + ID_DIVIDER + 
+        return source.getId() + ID_DIVIDER + 
                 getZoomLevel() + ID_DIVIDER + 
                 getX() + ID_DIVIDER + 
                 getY();

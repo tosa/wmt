@@ -6,12 +6,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
+import net.refractions.udig.catalog.wmt.internal.Messages;
 import net.refractions.udig.core.internal.CorePlugin;
 
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
 
+/**
+ * Represents a &lt;LayerSet&gt;, which may contain &lt;ChildLayerSet&gt;
+ * and/or &lt;QuadTileSet&gt;
+ * see: http://worldwindxml.worldwindcentral.com/zoomit.xml?version=1.4.0.0
+ * 
+ * @author to.srwn
+ * @since 1.1.0
+ */
 public class LayerSet {
     private String name;
     private String id;
@@ -19,7 +28,7 @@ public class LayerSet {
     private List<QuadTileSet> quadTileSets;
     private List<LayerSet> childLayerSets;
     
-    public static final char ID_SEPERATOR = '/';
+    public static final char ID_SEPERATOR = '-';
     
     public LayerSet(Element xmlElement, String id) throws Exception {
         this.name = xmlElement.getAttributeValue("Name"); //$NON-NLS-1$
@@ -65,16 +74,36 @@ public class LayerSet {
         return childLayerSets;
     }
     
+    @SuppressWarnings("nls")
+    private static final String[] ILLEGAL_CHARACTERS = 
+        { "/", "\n", "\r", "\t", "\0", "\f", "`", "?", "*", "\\", "<", ">", "|", "\"", ":" };
     public static String constructId(String prefix, String name) {
-        return prefix + ID_SEPERATOR + name.replace('#', ' ');
+        String id = prefix + ID_SEPERATOR + name.replace("#", "%20"); //$NON-NLS-1$ //$NON-NLS-2$
+        
+        for (int i = 0; i < ILLEGAL_CHARACTERS.length; i++) {
+            if (id.indexOf(ILLEGAL_CHARACTERS[i]) >= 0) {
+                id = id.replace(ILLEGAL_CHARACTERS[i], "%20"); //$NON-NLS-1$ 
+            }
+        }
+        
+        return id.replace(" ", "%20"); //$NON-NLS-1$ //$NON-NLS-2$
     }
     
-    public static LayerSet getFromUrl(URL url) throws Exception{
+    /**
+     * Constructs a LayerSet instance from a given file.
+     * If the LayerSet of this file contains just a redirect,
+     * we are following the redirect. 
+     *
+     * @param url
+     * @return LayerSet instance representing a file
+     * @throws Exception
+     */
+    public static LayerSet getFromUrl(URL url) throws Exception {
         try{
             Element layerSet = getRootElementFromUrl(url);
             
             if (layerSet == null) {
-                throw new Exception("Not a valid WorldWind configuration file");
+                throw new Exception(Messages.WWService_NoValidFile);
             } else {
                 // check if this is just a redirect
                 String redirect = layerSet.getAttributeValue("redirect"); //$NON-NLS-1$
@@ -104,8 +133,7 @@ public class LayerSet {
         SAXBuilder builder = new SAXBuilder(false); 
         URLConnection connection = url.openConnection();            
         Document dom = builder.build(connection.getInputStream());
-        
-        Element root = dom.getRootElement();                    
-        return root; //$NON-NLS-1$
+                           
+        return dom.getRootElement(); 
     }
 }

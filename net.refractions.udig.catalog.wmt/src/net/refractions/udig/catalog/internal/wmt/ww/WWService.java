@@ -1,11 +1,4 @@
-/*
- * uDig - User Friendly Desktop Internet GIS client http://udig.refractions.net (C) 2004,
- * Refractions Research Inc. This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by the Free Software
- * Foundation; version 2.1 of the License. This library is distributed in the hope that it will be
- * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
- */
+
 package net.refractions.udig.catalog.internal.wmt.ww;
 
 import java.io.IOException;
@@ -32,18 +25,18 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
 
+
 /**
- * Connect to a WMS.
+ * Based on WMSServiceImpl this class represents a 
+ * NASA WorldWind configuration file in the catalog.
  * 
- * @author David Zwiers, Refractions Research
- * @since 0.6
+ * @see net.refractions.udig.catalog.internal.wmt.wmtsource.ww.LayerSet
+ * 
+ * @author to.srwn
+ * @since 1.1.0
  */
 public class WWService extends IService {
 
-    /**
-     * <code>WMS_URL_KEY</code> field
-     * Magic param key for Catalog WMS persistence.
-     */
     public static final String WW_URL_KEY = "net.refractions.udig.catalog.internal.wmt.WWService.WW_URL_KEY"; //$NON-NLS-1$
     public static final String WW_LAYERSET_KEY = "net.refractions.udig.catalog.internal.wmt.WWService.WW_LAYERSET_KEY"; //$NON-NLS-1$
 
@@ -53,14 +46,11 @@ public class WWService extends IService {
     private URL url;
 
     private volatile LayerSet layerSet = null;
-    protected final Lock rLock=new UDIGDisplaySafeLock();
     private volatile List<IResolve> members;
-    /**
-     * Construct <code>WMSServiceImpl</code>.
-     *
-     * @param url
-     * @param params
-     */
+    
+    protected final Lock rLock=new UDIGDisplaySafeLock();
+    private static final Lock dsLock = new UDIGDisplaySafeLock();
+
     public WWService(URL url, Map<String,Serializable> params) {
         this.params = params;
         this.url = url;
@@ -77,15 +67,14 @@ public class WWService extends IService {
     public Status getStatus() {
         return error != null? Status.BROKEN : layerSet == null? Status.NOTCONNECTED : Status.CONNECTED;
     }
-    private static final Lock dsLock = new UDIGDisplaySafeLock();
 
     /**
-     * Aquire the actual geotools WebMapServer instance.
+     * Aquire the actual LayerSet instance (load the file).
      * <p>
      * Note this method is blocking and throws an IOException to indicate such.
      * </p>
      * @param theUserIsWatching 
-     * @return WebMapServer instance
+     * @return LayerSet instance
      * @throws IOException 
      */
     protected LayerSet getLayerSet(IProgressMonitor theUserIsWatching) throws IOException{
@@ -100,8 +89,10 @@ public class WWService extends IService {
                         }
                         URL url1 = (URL) getConnectionParams().get(WW_URL_KEY);
                         if( theUserIsWatching != null )
-                            theUserIsWatching.worked( 5 );                
+                            theUserIsWatching.worked( 5 );  
+                        
                         layerSet = LayerSet.getFromUrl(url1); 
+                        
                         if( theUserIsWatching != null )
                             theUserIsWatching.done();
                     }
@@ -139,21 +130,21 @@ public class WWService extends IService {
     /*
      * @see net.refractions.udig.catalog.IService#resolve(java.lang.Class, org.eclipse.core.runtime.IProgressMonitor)
      */
-    public <T> T resolve( Class<T> adaptee, IProgressMonitor monitor ) throws IOException {
+    public <T> T resolve(Class<T> adaptee, IProgressMonitor monitor) throws IOException {
         if (adaptee == null) {
             return null;
         }
         
         if (adaptee.isAssignableFrom(IServiceInfo.class)) {
-            return adaptee.cast( createInfo(monitor));
+            return adaptee.cast(createInfo(monitor));
         }
         
         if (adaptee.isAssignableFrom(List.class)) {
-            return adaptee.cast( members(monitor));
+            return adaptee.cast(members(monitor));
         }
         
         if (adaptee.isAssignableFrom(LayerSet.class)) {
-            return adaptee.cast( getLayerSet( monitor ));
+            return adaptee.cast(getLayerSet(monitor));
         }
         
         return super.resolve(adaptee, monitor);
@@ -169,7 +160,7 @@ public class WWService extends IService {
     /*
      * @see net.refractions.udig.catalog.IResolve#canResolve(java.lang.Class)
      */
-    public <T> boolean canResolve( Class<T> adaptee ) {
+    public <T> boolean canResolve(Class<T> adaptee) {
         if (adaptee == null)
             return false;
 
@@ -180,7 +171,7 @@ public class WWService extends IService {
             return;
 
         int steps = (int) ((double) 99 / (double) members.size());
-        for( IResolve resolve : members ) {
+        for(IResolve resolve : members) {
             try {
                 SubProgressMonitor subProgressMonitor = new SubProgressMonitor(monitor, steps);
                 resolve.dispose(subProgressMonitor);
@@ -214,7 +205,7 @@ public class WWService extends IService {
         }
     }
 
-    public List<IResolve> members( IProgressMonitor monitor ) throws IOException {
+    public List<IResolve> members(IProgressMonitor monitor) throws IOException {
 
         if(members == null){
             getLayerSet(monitor);

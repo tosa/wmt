@@ -23,7 +23,7 @@ public class WMTTileImageReadWriter extends TileImageReadWriter {
     }
 
     public String getTileDirectoryPath(WMTTile tile) {        
-        return WMTTileImageReadWriter.pathCombine(baseDir, tile.getReleatedSourceName());
+        return WMTTileImageReadWriter.pathCombine(baseDir, tile.getReleatedSourceId());
     }
     
     /**

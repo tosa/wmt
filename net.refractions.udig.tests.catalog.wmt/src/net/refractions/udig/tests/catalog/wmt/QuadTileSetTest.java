@@ -69,6 +69,9 @@ public class QuadTileSetTest extends TestCase {
         QuadTileSet quadTileSet = new QuadTileSet(rootElement.getChild("ChildLayerSet").getChild("QuadTileSet"), "");
         WWSource wwSource = new WWSource(quadTileSet);
         
+        assertEquals(2, wwSource.getZoomLevel(0).getMaxTilePerColNumber());
+        assertEquals(4, wwSource.getZoomLevel(0).getMaxTilePerRowNumber());
+        
         WWTile tile1 = new WWTile(0, 0, wwSource.getZoomLevel(0), wwSource);        
         assertEquals(new Envelope(-180, -90, -90, 0), tile1.getBounds());
         
@@ -77,9 +80,13 @@ public class QuadTileSetTest extends TestCase {
         
         WWTile tile3 = tile1.getLowerNeighbour();        
         assertEquals(new Envelope(-180, -90, 0, 90), tile3.getBounds());
+        assertEquals("0/0/1", tile3.getTileName().toString());
         
         WWTile tile4 = tile3.getRightNeighbour();        
         assertEquals(new Envelope(-90, 0, 0, 90), tile4.getBounds());
+        
+        assertEquals(tile4, tile4.getLowerNeighbour().getLowerNeighbour());
+        
     }
     
 

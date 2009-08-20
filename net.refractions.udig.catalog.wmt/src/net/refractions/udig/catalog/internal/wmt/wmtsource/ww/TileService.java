@@ -5,8 +5,8 @@ import net.refractions.udig.catalog.internal.wmt.tile.WWTile.WWTileName;
 import org.jdom.Element;
 
 /**
- * Represents a TileService of a <ImageAccessor>:
- * either <ImageTileService> or <WMSAccessor>
+ * Represents a TileService of a &lt;ImageAccessor&gt;:
+ * either &lt;ImageTileService&gt; or &lt;WMSAccessor&gt;
  * 
  * see: http://worldwindxml.worldwindcentral.com/zoomit.xml?version=1.4.0.0
  * 

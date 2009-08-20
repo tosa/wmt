@@ -1,19 +1,4 @@
-/*
- *    uDig - User Friendly Desktop Internet GIS client
- *    http://udig.refractions.net
- *    (C) 2004, Refractions Research Inc.
- *
- *    This library is free software; you can redistribute it and/or
- *    modify it under the terms of the GNU Lesser General Public
- *    License as published by the Free Software Foundation;
- *    version 2.1 of the License.
- *
- *    This library is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *    Lesser General Public License for more details.
- *
- */
+
 package net.refractions.udig.catalog.internal.wmt.ww;
 
 import java.io.Serializable;
@@ -27,21 +12,22 @@ import net.refractions.udig.catalog.ServiceExtension2;
 import net.refractions.udig.catalog.wmt.internal.Messages;
 
 /**
- * A service extension for creating WMS Services
+ * A service extension for creating WWServices,
+ * based on WMSServiceExtension
  * 
- * @author David Zwiers, Refractions Research
- * @since 0.6
+ * @author to.srwn
+ * @since 1.1.0
  */
 public class WWServiceExtension implements ServiceExtension2 {
 
-    public IService createService( URL id, Map<String, Serializable> params ) {
+    public IService createService(URL id, Map<String, Serializable> params) {
         if (params == null){
             return null;
         }
 
         if ((!params.containsKey(WWService.WW_URL_KEY) && id == null)
                 && !params.containsKey(WWService.WW_LAYERSET_KEY)) {
-            return null; // nope we don't have a WMS_URL_KEY
+            return null; // nope we don't have a WW_URL_KEY
         }
 
         URL extractedId = extractId(params);
@@ -55,7 +41,7 @@ public class WWServiceExtension implements ServiceExtension2 {
         }
         return null;
     }
-    private URL extractId( Map<String, Serializable> params ) {
+    private URL extractId(Map<String, Serializable> params) {
         if (params.containsKey(WWService.WW_URL_KEY)) {
             URL base = null; // base url for service
 
@@ -82,12 +68,12 @@ public class WWServiceExtension implements ServiceExtension2 {
         return null;
     }
 
-    public Map<String, Serializable> createParams( URL url ) {
+    public Map<String, Serializable> createParams(URL url) {
         if (!isWWConfigFile(url)) {
             return null;
         }
         
-        // wms check
+        // valid url 
         Map<String, Serializable> params2 = new HashMap<String, Serializable>();
         params2.put(WWService.WW_URL_KEY, url);
 
@@ -121,7 +107,7 @@ public class WWServiceExtension implements ServiceExtension2 {
             return Messages.WWServiceExtension_Protocol;
         }
         
-        if (PATH == null || PATH.isEmpty()) {
+        if (PATH == null || PATH.isEmpty() || !PATH.toLowerCase().contains(".xml")) { //$NON-NLS-1$
             return Messages.Wizard_WW_Error_InvalidURL;
         }
 

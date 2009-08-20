@@ -6,6 +6,12 @@ import net.refractions.udig.catalog.internal.wmt.tile.WWTile.WWTileName;
 
 import org.jdom.Element;
 
+/**
+ * Represents &lt;ImageTileService&gt; inside a &lt;ImageAccessor&gt;
+ * 
+ * @author to.srwn
+ * @since 1.1.0
+ */
 public class ImageTileService extends TileService {
     /*
      * {0}: ServerUrl (e.g. http://worldwind25.arc.nasa.gov/tile/tile.aspx)

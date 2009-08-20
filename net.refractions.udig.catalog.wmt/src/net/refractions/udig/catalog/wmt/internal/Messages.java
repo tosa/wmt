@@ -74,6 +74,7 @@ public class Messages extends NLS {
     
     public static String WWService_Connecting_to;
     public static String WWService_Could_not_connect;
+    public static String WWService_NoValidFile;
 	
 	static {
 		// initialize resource bundle

@@ -1,11 +1,4 @@
-/*
- * uDig - User Friendly Desktop Internet GIS client http://udig.refractions.net (C) 2004,
- * Refractions Research Inc. This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by the Free Software
- * Foundation; version 2.1 of the License. This library is distributed in the hope that it will be
- * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
- */
+
 package net.refractions.udig.catalog.internal.wmt.ww;
 
 import java.io.IOException;
@@ -23,11 +16,14 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 
 /**
- * SimpleFeatureType provided by WFS.
- * </p>
+ * Based on WMSGeoResourceImpl this class represents a WWSource (QuadTileSet) 
+ * in the catalog.
  * 
- * @author David Zwiers, Refractions Research
- * @since 0.6
+ * @see net.refractions.udig.catalog.internal.wmt.wmtsource.ww.QuadTileSet
+ * @see net.refractions.udig.catalog.internal.wmt.wmtsource.WWSource
+ * 
+ * @author to.srwn
+ * @since 1.1.0
  */
 public class WWGeoResource extends IGeoResource {
 
@@ -38,23 +34,17 @@ public class WWGeoResource extends IGeoResource {
     
     private Throwable msg = null;
 
-    /**
-     * Construct <code>WMSGeoResourceImpl</code>.
-     * 
-     * @param service
-     * @param parent the parent Georesource may be null if parent is the service.
-     * @param layer
-     */
     public WWGeoResource(WWService service, IResolve parent, WWSource wwSource) {
         this.service = service;
+        this.wwSource = wwSource;
+        
+        // if parent is empty, use the service as parent
         if (parent == null) {
             this.parent = service;
         } else {
             this.parent = parent;
         }
-        
-        this.wwSource = wwSource;
-        
+                
         try {
             identifier = new URL(service.getIdentifier().toString() + "#" + wwSource.getId()); //$NON-NLS-1$
 

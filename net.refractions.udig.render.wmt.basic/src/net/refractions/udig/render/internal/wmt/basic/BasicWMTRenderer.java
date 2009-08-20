@@ -201,6 +201,11 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             //Find tiles
             Map<String, Tile> tileList = wmtSource.cutExtentIntoTiles(mapExtentProjected, scale, WMTSource.SCALE_FACTOR, false, layerProperties);
             
+            // if we have nothing to display, return
+            if (tileList.isEmpty()) {
+                return;
+            }
+            
             // check if these are to many tiles
             int tilesCount = tileList.size();
             if (tilesCount > WARNING_TOO_MANY_TILES) {

@@ -8,7 +8,7 @@ import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.jdom.Element;
 
 /**
- * Represents a <QuadTileSet> of a <LayerSet>
+ * Represents a &lt;QuadTileSet&gt; of a &lt;LayerSet&gt;
  * see: http://worldwindxml.worldwindcentral.com/zoomit.xml?version=1.4.0.0
  * 
  * @author to.srwn

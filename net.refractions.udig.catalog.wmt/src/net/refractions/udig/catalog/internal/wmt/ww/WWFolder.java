@@ -1,17 +1,3 @@
-/* uDig - User Friendly Desktop Internet GIS client
- * http://udig.refractions.net
- * (C) 2004, Refractions Research Inc.
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation;
- * version 2.1 of the License.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- */
 package net.refractions.udig.catalog.internal.wmt.ww;
 
 import java.io.IOException;
@@ -32,12 +18,12 @@ import net.refractions.udig.catalog.internal.wmt.wmtsource.ww.QuadTileSet;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.resource.ImageDescriptor;
 
-/**
- * Since WMSFolder is not a IGeoResource but it shares most of its code with
- * {@link WWGeoResource} this class exists for sharing that code. If mixins were permitted in
- * Java this wouldn't be necessary... But it is.
+/** 
+ * Based on WMSFolder this class represents a LayerSet in the catalog.
  * 
- * @author jesse
+ * @see net.refractions.udig.catalog.internal.wmt.wmtsource.ww.LayerSet
+ * 
+ * @author to.srwn
  * @since 1.1.0
  */
 public class WWFolder implements IResolveFolder {
@@ -48,22 +34,16 @@ public class WWFolder implements IResolveFolder {
     private List<IResolve> members;
     private URL identifier;
 
-
-    /**
-     * Construct <code>WMSGeoResourceImpl</code>.
-     * 
-     * @param service
-     * @param parent the parent Georesource may be null if parent is the service.
-     * @param layer
-     */
-    public WWFolder( WWService service, IResolve parent, LayerSet layerSet) {
+    public WWFolder(WWService service, IResolve parent, LayerSet layerSet) {
         this.service = service;
+        this.layerSet = layerSet;
+        
+        // if parent is empty, use the service as parent
         if (parent == null) {
             this.parent = service;
         } else {
             this.parent = parent;
         }
-        this.layerSet = layerSet;
         
         members = new LinkedList<IResolve>();
         
@@ -87,28 +67,12 @@ public class WWFolder implements IResolveFolder {
             identifier = service.getIdentifier();
         }
     }
-
-    public <T> boolean canResolve( Class<T> adaptee ) {
-        if (adaptee == null) {
-            return false;
-        }
-
-        if (adaptee.isAssignableFrom(WWFolder.class)
-                || adaptee.isAssignableFrom(LayerSet.class)) {
-            return true;
-        }
-
-        return CatalogPlugin.getDefault().getResolveManager().canResolve(this, adaptee);
-    }
     
-    public void dispose( IProgressMonitor monitor ) {
-    }
-
     public URL getIdentifier() {
         return identifier;
     }
     public ID getID() {
-        return new ID( getIdentifier() );        
+        return new ID(getIdentifier());        
     }
     public Throwable getMessage() {
         return null;
@@ -126,6 +90,26 @@ public class WWFolder implements IResolveFolder {
         return parent;
     }
 
+    /*
+     * @see net.refractions.udig.catalog.IResolve#canResolve(java.lang.Class)
+     */
+    public <T> boolean canResolve( Class<T> adaptee ) {
+        if (adaptee == null) {
+            return false;
+        }
+
+        if (adaptee.isAssignableFrom(WWFolder.class)
+                || adaptee.isAssignableFrom(LayerSet.class)) {
+            return true;
+        }
+
+        return CatalogPlugin.getDefault().getResolveManager().canResolve(this, adaptee);
+    }
+    
+    /*
+     * @see net.refractions.udig.catalog.IGeoResource#resolve(java.lang.Class,
+     *      org.eclipse.core.runtime.IProgressMonitor)
+     */
     public <T> T resolve( Class<T> adaptee, IProgressMonitor monitor ) throws IOException {
         if (adaptee == null) {
             throw new NullPointerException();
@@ -156,6 +140,9 @@ public class WWFolder implements IResolveFolder {
 
     public ImageDescriptor getIcon(IProgressMonitor monitor) {
         return null;
+    }
+
+    public void dispose( IProgressMonitor monitor ) {
     }
 
 }

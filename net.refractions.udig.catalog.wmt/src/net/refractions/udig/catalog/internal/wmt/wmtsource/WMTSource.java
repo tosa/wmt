@@ -2,10 +2,11 @@ package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.refractions.udig.catalog.internal.wms.Trace;
+import net.refractions.udig.catalog.internal.wmt.Trace;
 import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
@@ -55,6 +56,10 @@ public abstract class WMTSource {
     
     public String getName() {
         return name;
+    }
+    
+    public String getId() {
+        return getName();
     }
     
     public int getTileWidth() {
@@ -361,6 +366,11 @@ public abstract class WMTSource {
             int scaleFactor, boolean recommendedZoomLevel, WMTLayerProperties layerProperties) {
         extent = normalizeExtent(extent);
         
+        // only continue, if we have tiles that cover the requested extent
+        if (!extent.intersects((Envelope) getBounds())) {
+            return Collections.emptyMap();
+        }
+        
         WMTTileFactory tileFactory = getTileFactory();
                 
         WMTZoomLevel zoomLevel = tileFactory.getZoomLevel(getZoomLevelToUse(scale, 
@@ -399,7 +409,7 @@ public abstract class WMTSource {
                 } else {
                     break;
                 }
-            } while(tileList.size() <= maxNumberOfTiles);
+            } while(tileList.size() < maxNumberOfTiles);
 
             // get the next tile under the first one of the row
             WMTTile lowerNeighbour = firstTileOfRow.getLowerNeighbour();
@@ -416,7 +426,7 @@ public abstract class WMTSource {
             } else {
                 break;
             }            
-        } while(tileList.size() <= maxNumberOfTiles);
+        } while(tileList.size() < maxNumberOfTiles);
         
         return tileList;
     }

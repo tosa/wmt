@@ -33,7 +33,7 @@ public class NASATileTest extends TestCase {
     @Test
     public void testZoomLevel() {
         
-        NASAZoomLevel zoomLevel = source.getZoomLevel(1);
+        NASAZoomLevel zoomLevel = source.getZoomLevel(0);
 
 
         ReferencedEnvelope boundsFirstTile = new ReferencedEnvelope(-180, -52, -38, 90, DefaultGeographicCRS.WGS84);
@@ -54,7 +54,7 @@ public class NASATileTest extends TestCase {
     
     public void testGetTileFromCoordinate() {
         
-        NASAZoomLevel zoomLevel = source.getZoomLevel(1);
+        NASAZoomLevel zoomLevel = source.getZoomLevel(0);
         WMTTileFactory tileFactory = source.getTileFactory();
         
         NASATile tile = (NASATile) tileFactory.getTileFromCoordinate(90, -180, zoomLevel, source);        
@@ -83,7 +83,7 @@ public class NASATileTest extends TestCase {
     }
     
     public void testGetExtentFromTileName() {
-        NASAZoomLevel zoomLevel = source.getZoomLevel(1);
+        NASAZoomLevel zoomLevel = source.getZoomLevel(0);
         
         NASATileName tileName1 = new NASATileName(0, 0, zoomLevel, source);
         

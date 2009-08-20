@@ -1,11 +1,13 @@
 package net.refractions.udig.catalog.internal.wmt.ui.wizard;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -102,7 +104,7 @@ public class WWWizardPage extends AbstractUDIGImportPage implements ModifyListen
         return "net.refractions.udig.catalog.ui.WW"; //$NON-NLS-1$
     }
     
-    public void createControl( Composite parent ) {
+    public void createControl(Composite parent) {
         Composite composite = new Composite(parent, SWT.NULL);
 
         GridLayout gridLayout = new GridLayout();
@@ -341,7 +343,27 @@ public class WWWizardPage extends AbstractUDIGImportPage implements ModifyListen
         return servers;
     }
     
-    public boolean leavingPage() {        
+    /**
+     * When "Next" is pressed, check if we can load the file.
+     */
+    public boolean leavingPage() {  
+        Collection<IService> services = getServices();
+        
+        for (IService service : services) {
+            try {
+                // try to load the file
+                service.members(null);
+            } catch(IOException exc) {
+                // no, this is not going to work, cancel
+                setErrorMessage(Messages.WWService_NoValidFile); 
+                setPageComplete(false);
+                getWizard().getContainer().updateButtons();
+                
+                return false;
+            }
+        }
+        
+        // everything worked fine        
         saveWidgetValues();
         
         return super.leavingPage();
@@ -378,9 +400,9 @@ public class WWWizardPage extends AbstractUDIGImportPage implements ModifyListen
     private void saveWidgetValues() {
         // Update history
         if (settings != null) {
-            String[] recentWMSs = getRecentURLs();
-            recentWMSs = addToHistory(recentWMSs, url);
-            settings.put(WW_RECENT, recentWMSs);
+            String[] recentURLs = getRecentURLs();
+            recentURLs = addToHistory(recentURLs, url);
+            settings.put(WW_RECENT, recentURLs);
         }
     }
 

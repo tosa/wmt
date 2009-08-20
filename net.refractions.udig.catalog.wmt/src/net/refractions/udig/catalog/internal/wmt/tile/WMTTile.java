@@ -53,8 +53,8 @@ public abstract class WMTTile implements Tile{
         return tileName.getId();
     }
     
-    public String getReleatedSourceName() {
-        return tileName.getSource().getName();
+    public String getReleatedSourceId() {
+        return tileName.getSource().getId();
     }
     
     public abstract WMTTile getRightNeighbour();
@@ -339,7 +339,7 @@ public abstract class WMTTile implements Tile{
         public abstract int calculateMaxTilePerColNumber(int zoomLevel);
         
         public long calculateMaxTileNumber() {
-            return ((long) (maxTilePerColNumber + 1)) * ((long) (maxTilePerRowNumber + 1));
+            return ((long) (maxTilePerColNumber)) * ((long) (maxTilePerRowNumber));
         }
         
         public int getZoomLevel() {

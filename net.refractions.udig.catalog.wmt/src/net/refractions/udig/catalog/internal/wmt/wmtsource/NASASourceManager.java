@@ -225,15 +225,15 @@ public class NASASourceManager {
      */
     private String getConcatenatedGroupName(String groupNames, String newGroupName) {
         /* Replace separator characters
-         * | : separates TiledGroup names
+         * - : separates TiledGroup names
          * # : separates the service id from the geo-resource id
          */
-        newGroupName = newGroupName.replace('|', ' ').replace('#', ' ');
+        newGroupName = newGroupName.replace('-', ' ').replace('#', ' ');
         
         if (groupNames.isEmpty()) {
             return newGroupName;
         } else {
-            return groupNames + "|" + newGroupName; //$NON-NLS-1$
+            return groupNames + "-" + newGroupName; //$NON-NLS-1$
         }
     }
 }

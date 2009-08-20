@@ -99,9 +99,12 @@ public class WWTile extends WMTTile {
                     wwSource.getBounds().getMinX(), wwSource.getBounds().getMaxX());
             
             WWZoomLevel wwZoomLevel = (WWZoomLevel) zoomLevel;
-            
-            int row = (int) Math.abs((lat - wwSource.getBounds().getMinY())  / wwZoomLevel.getHeightInWorldUnits());
-            int col = (int) Math.abs((lon - wwSource.getBounds().getMinX()) / wwZoomLevel.getWidthInWorldUnits());
+            int row = WMTTileName.arithmeticMod(
+                        (int) Math.abs((lat - wwSource.getBounds().getMinY())  / wwZoomLevel.getHeightInWorldUnits()),
+                        zoomLevel.getMaxTilePerColNumber());
+            int col = WMTTileName.arithmeticMod(
+                        (int) Math.abs((lon - wwSource.getBounds().getMinX()) / wwZoomLevel.getWidthInWorldUnits()),
+                        zoomLevel.getMaxTilePerRowNumber());
             
             WMTPlugin.debug("[WWTile.getTileFromCoordinate] " + zoomLevel.getZoomLevel() + //$NON-NLS-1$
                     "/" + col +  "/" + row + " lon: " + lon + " lat: " + lat, Trace.WW);  //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
