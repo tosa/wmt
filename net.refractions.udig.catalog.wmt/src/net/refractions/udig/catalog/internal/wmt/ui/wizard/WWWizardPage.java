@@ -358,13 +358,13 @@ public class WWWizardPage extends AbstractUDIGImportPage implements ModifyListen
                 getContainer().run(false, true, 
                         new IRunnableWithProgress(){
 
-                            public void run( IProgressMonitor monitor ) 
+                            public void run(IProgressMonitor monitor) 
                                     throws InvocationTargetException, InterruptedException {
                                 monitor.beginTask(Messages.Wizard_WW_Connecting, IProgressMonitor.UNKNOWN);
                 
                                 // try to load the file
                                 try {
-                                    runService.members(null);
+                                    runService.members(monitor);
                                 } catch (IOException e) {
                                     throw (InvocationTargetException) new InvocationTargetException(e, e.getLocalizedMessage());
                                     
