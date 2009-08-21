@@ -12,10 +12,12 @@ import net.refractions.udig.catalog.internal.wmt.Trace;
 import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.WMTServiceExtension;
+import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.CSControl;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.MQControl;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.OSMCloudMadeControl;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.OSMControl;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.WMTWizardControl;
+import net.refractions.udig.catalog.internal.wmt.wmtsource.CSSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASourceManager;
@@ -269,10 +271,16 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         addWMTSourceToTree(osm, OSMCycleMapSource.class, osmControlFactory);
         
         OSMCloudMadeControl osmCloudMadeControlFactory = new OSMCloudMadeControl();
-        TreeItem newTreeItem = new TreeItem(osm, SWT.NONE);        
-        newTreeItem.setText(OSMCloudMadeSource.NAME);
-        WMTWizardTreeItemData data = new WMTWizardTreeItemData(null, osmCloudMadeControlFactory);
-        newTreeItem.setData(data);
+        TreeItem cloudMadeTreeItem = new TreeItem(osm, SWT.NONE);        
+        cloudMadeTreeItem.setText(OSMCloudMadeSource.NAME);
+        WMTWizardTreeItemData dataCloudMade = new WMTWizardTreeItemData(null, osmCloudMadeControlFactory);
+        cloudMadeTreeItem.setData(dataCloudMade);
+        
+        CSControl osmCSControlFactory = new CSControl();
+        TreeItem csTreeItem = new TreeItem(osm, SWT.NONE);        
+        csTreeItem.setText(Messages.Wizard_CS_Title);
+        WMTWizardTreeItemData dataCS = new WMTWizardTreeItemData(null, osmCSControlFactory);
+        csTreeItem.setData(dataCS);
 
         osm.setExpanded(true);
         //endregion

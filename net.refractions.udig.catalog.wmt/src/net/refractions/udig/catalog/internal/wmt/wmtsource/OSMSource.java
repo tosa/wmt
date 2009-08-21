@@ -11,7 +11,31 @@ public abstract class OSMSource extends WMTSource {
         setName(NAME); 
     }
     
-    public abstract String getBaseUrl();
+    /**
+     * Returns the prefix of an tile-url, e.g.:
+     * http://tile.openstreetmap.org/
+     *
+     * @return
+     */
+    protected abstract String getBaseUrl();
+    
+    /**
+     * Constructs the url to fetch the tile from the given params.
+     *
+     * @param zoomLevel
+     * @param x
+     * @param y
+     * @return
+     */
+    public String getTileUrl(int zoomLevel, int x, int y) {
+        StringBuffer url = new StringBuffer(getBaseUrl());
+        
+        url.append(zoomLevel + "/"); //$NON-NLS-1$
+        url.append(x + "/"); //$NON-NLS-1$
+        url.append(y + ".png"); //$NON-NLS-1$
+        
+        return url.toString();
+    }
     
     //region Zoom-level
     /**

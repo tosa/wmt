@@ -167,10 +167,9 @@ public class OSMTile extends WMTTile {
         public URL getTileUrl() {
             try {
                 return new URL(null,
-                        osmSource.getBaseUrl() + 
-                        zoomLevel.getZoomLevel() + "/" +  //$NON-NLS-1$
-                        getX() + "/" + //$NON-NLS-1$
-                        getY() + ".png", //$NON-NLS-1$
+                        osmSource.getTileUrl(zoomLevel.getZoomLevel(),
+                                getX(),
+                                getY()),
                         CorePlugin.RELAXED_HANDLER); 
             } catch (MalformedURLException e) {
                 WMTPlugin.log("[OSMTile] Could not create the url for tile (Zoom: " + zoomLevel.getZoomLevel() + //$NON-NLS-1$

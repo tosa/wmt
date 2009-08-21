@@ -1,7 +1,6 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
 import net.refractions.udig.catalog.internal.wmt.tile.WWTile;
-import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
 import net.refractions.udig.catalog.internal.wmt.tile.WWTile.WWTileFactory;
 import net.refractions.udig.catalog.internal.wmt.tile.WWTile.WWTileName.WWZoomLevel;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.ww.QuadTileSet;

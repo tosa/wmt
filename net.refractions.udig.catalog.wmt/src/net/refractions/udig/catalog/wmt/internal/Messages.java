@@ -68,6 +68,19 @@ public class Messages extends NLS {
     public static String Wizard_WW_ConnectionProblem;
     public static String Wizard_WW_Error_InvalidURL;
     
+    public static String Wizard_CS_Title;
+    public static String Wizard_CS_Description;
+    public static String Wizard_CS_UrlTileNames;
+    public static String Wizard_CS_Url;
+    public static String Wizard_CS_UrlDefault;
+    public static String Wizard_CS_ZoomLevel;
+    public static String Wizard_CS_Min;
+    public static String Wizard_CS_Max;
+    public static String Wizard_CS_AvailableTags;
+    public static String Wizard_CS_TagZoom;
+    public static String Wizard_CS_TagX;
+    public static String Wizard_CS_TagY;
+    
     public static String WWServiceExtension_NeedsKey;
     public static String WWServiceExtension_NullValue;
     public static String WWServiceExtension_NullURL;

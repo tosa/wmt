@@ -198,6 +198,12 @@ public abstract class WMTSource {
         return url; 
     }
     
+    /**
+     * Generates the URL for CloudMadeSource-Services
+     *
+     * @param styleId
+     * @return
+     */
     public static URL getCloudMadeServiceUrl(String styleId) {
         URL url = getRelatedServiceUrl(OSMCloudMadeSource.class);
         
@@ -206,6 +212,33 @@ public abstract class WMTSource {
         }
         catch(MalformedURLException exc) {
             WMTPlugin.log("[WMTSource.getCloudMadeServiceUrl] Could not create url: " + styleId, exc); //$NON-NLS-1$
+            url = null;
+        }        
+        
+        return url; 
+    }
+    
+    /**
+     * Generates the URL for CustomServer-Services
+     *
+     * @param serverUrl
+     * @param zoomMin
+     * @param zoomMax
+     * @return
+     */
+    public static URL getCustomServerServiceUrl(String serverUrl, String zoomMin, String zoomMax) {
+        URL url = getRelatedServiceUrl(CSSource.class);
+        
+        try {
+            url = new URL(null, 
+                    url.toExternalForm() + "/" + //$NON-NLS-1$
+                    serverUrl + "/" + //$NON-NLS-1$
+                    zoomMin + "/" + //$NON-NLS-1$
+                    zoomMax,
+                    CorePlugin.RELAXED_HANDLER); 
+        }
+        catch(MalformedURLException exc) {
+            WMTPlugin.log("[WMTSource.getCustomServerServiceUrl] Could not create url: " + serverUrl + " " + zoomMin + " " + zoomMax, exc); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
             url = null;
         }        
         

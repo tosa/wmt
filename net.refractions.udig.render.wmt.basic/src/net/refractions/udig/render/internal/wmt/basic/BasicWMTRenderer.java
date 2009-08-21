@@ -79,7 +79,7 @@ import com.vividsolutions.jts.geom.Envelope;
 public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRenderer {
     //todo: move to settings
     private static int WARNING_TOO_MANY_TILES = 40;
-    private static int ERROR_TOO_MANY_TILES = 70;
+    private static int ERROR_TOO_MANY_TILES = 120;
     
     private static StyleBuilder styleBuilder = new StyleBuilder();
 

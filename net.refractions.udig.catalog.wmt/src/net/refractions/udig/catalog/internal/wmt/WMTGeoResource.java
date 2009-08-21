@@ -30,12 +30,12 @@ public class WMTGeoResource extends IGeoResource {
         this.wmtService = service;
         
         if (resourceId.equals(WMTGeoResource.DEFAULT_ID)) {
-            // is this a OSMCloudMadeSource?
-            String styleId = getStyleIdFromUrl(wmtService.getIdentifier());
+            // is this a OSMCloudMadeSource or CSSource?
+            String sourceInitData = getSourceInitDataFromUrl(wmtService.getIdentifier());
             
-            // if yes, let's use the style-id as resource-id
-            if(styleId != null) {
-                this.resourceId = styleId;
+            // if yes, let's use the init-data as resource-id
+            if(sourceInitData != null) {
+                this.resourceId = sourceInitData;
             } else {
                 this.resourceId = resourceId; 
             }
@@ -47,20 +47,27 @@ public class WMTGeoResource extends IGeoResource {
     }
     
     /**
-     * Gets the style-id from an url:
+     * Gets the init data from an url:
+     * 
      * wmt://localhost/wmt/net.refractions.udig.catalog.internal.wmt.wmtsource.OSMCloudMadeSource/3
      *  -->
      *  3 
      *
+     *  or
+     *  
+     *  wmt://localhost/wmt/net.refractions.udig.catalog.internal.wmt.wmtsource.CSSource/tile.openstreetmap.org/{z}/{x}/{y}.png/2/18
+     *  -->
+     *  tile.openstreetmap.org/{z}/{x}/{y}.png/2/18
+     *  
      * @param url
      * @return
      */
-    private String getStyleIdFromUrl(URL url) {
+    private String getSourceInitDataFromUrl(URL url) {
         String className = WMTSourceFactory.getClassFromUrl(url);
         String styleId = url.toString().replace(WMTService.ID, "").replace(className, "");  //$NON-NLS-1$ //$NON-NLS-2$ 
         
         if (!styleId.isEmpty()) {
-            return styleId.replace("/", "");//$NON-NLS-1$ //$NON-NLS-2$
+            return styleId.replaceFirst("/", "");//$NON-NLS-1$ //$NON-NLS-2$
         } else {
             return null;
         }
