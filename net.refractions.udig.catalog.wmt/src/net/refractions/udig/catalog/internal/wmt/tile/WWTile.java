@@ -110,7 +110,7 @@ public class WWTile extends WMTTile {
             
             WWZoomLevel wwZoomLevel = (WWZoomLevel) zoomLevel;
             int row = WMTTileName.arithmeticMod(
-                        (int) Math.abs((lat - WWSource.WORLD_BOUNDS.getMinY())  / wwZoomLevel.getHeightInWorldUnits()),
+                        (int) Math.ceil(Math.abs((lat - WWSource.WORLD_BOUNDS.getMinY())  / wwZoomLevel.getHeightInWorldUnits())) - 1,
                         zoomLevel.getMaxTilePerColNumber());
             int col = WMTTileName.arithmeticMod(
                         (int) Math.abs((lon - WWSource.WORLD_BOUNDS.getMinX()) / wwZoomLevel.getWidthInWorldUnits()),
