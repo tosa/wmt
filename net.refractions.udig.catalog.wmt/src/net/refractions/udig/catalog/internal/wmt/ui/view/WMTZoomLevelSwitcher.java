@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.refractions.udig.catalog.IGeoResource;
+import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
+import net.refractions.udig.catalog.internal.wmt.WMTScaleZoomLevelMatcher;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.catalog.wmt.internal.Messages;
 import net.refractions.udig.project.ILayer;
@@ -37,6 +39,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IPartListener;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.part.ViewPart;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 
 public class WMTZoomLevelSwitcher extends ViewPart {
     
@@ -59,7 +62,6 @@ public class WMTZoomLevelSwitcher extends ViewPart {
     private IMap currentMap = ApplicationGIS.NO_MAP;
     private List<ILayer> layerList;
     
-    private double[] scales;
     private Integer[] zoomLevels;
     
     // Icons
@@ -404,8 +406,6 @@ public class WMTZoomLevelSwitcher extends ViewPart {
         if (wmtSource == null) {
             cvZoomLevels.setInput(null);
         } else {
-            scales = wmtSource.getScaleList();
-
             int minZoomLevel = wmtSource.getMinZoomLevel();
             int maxZoomLevel = wmtSource.getMaxZoomLevel();
             
@@ -418,17 +418,24 @@ public class WMTZoomLevelSwitcher extends ViewPart {
     
     //region Updates to the GUI regarding the scale
     private void updateGUIFromScale() {
-        WMTSource wmtSource = getWMTSourceOfSelectedLayer();
-        
-        if (wmtSource != null) {
-            double scale = currentMap.getViewportModel().getScaleDenominator();
-            
-            // get the zoom-level for this scale
-            int zoomLevel = wmtSource.getZoomLevelFromMapScale(scale, WMTSource.SCALE_FACTOR);
-            
-            setSelectedZoomLevel(zoomLevel);
-            updateZoomButtons(zoomLevel);
-        }        
+        try {
+            WMTSource wmtSource = getWMTSourceOfSelectedLayer();
+
+            if (wmtSource != null) {
+                // get the zoom-level for this scale
+                WMTScaleZoomLevelMatcher zoomLevelMatcher = getZoomLevelMatcher(wmtSource);
+
+                int zoomLevel = wmtSource.getZoomLevelFromMapScale(zoomLevelMatcher,
+                        WMTSource.SCALE_FACTOR); //todo!
+
+                setSelectedZoomLevel(zoomLevel);
+                updateZoomButtons(zoomLevel);
+            } else {
+                throw new Exception("wmtSource is null"); //$NON-NLS-1$
+            }
+        } catch (Exception e) {
+            WMTPlugin.log("[WMTZoomLevelSwitcher.updateGUIFromScale] Failed ", e); //$NON-NLS-1$
+        }
     }
     //endregion
     
@@ -537,6 +544,14 @@ public class WMTZoomLevelSwitcher extends ViewPart {
     //endregion
     
     //region Methods to zoom in/out
+    private synchronized WMTScaleZoomLevelMatcher getZoomLevelMatcher(WMTSource wmtSource) throws Exception {
+        double mapScale = currentMap.getViewportModel().getScaleDenominator();
+        ReferencedEnvelope mapExtentMapCrs = currentMap.getViewportModel().getBounds();
+        
+        return WMTScaleZoomLevelMatcher.createMatcher(
+                mapExtentMapCrs, mapScale, wmtSource);
+    }
+    
     private void zoomIn() {
         int zoomLevel = getSelectedZoomLevel();
         
@@ -554,7 +569,21 @@ public class WMTZoomLevelSwitcher extends ViewPart {
     }
     
     private void zoomToZoomLevel(int zoomLevel) {
-        zoomToScale(scales[zoomLevel]);
+        try {
+            WMTSource wmtSource = getWMTSourceOfSelectedLayer();
+            
+            if (wmtSource != null) {                
+                WMTScaleZoomLevelMatcher zoomLevelMatcher = getZoomLevelMatcher(wmtSource);
+                double scale = zoomLevelMatcher.getOptimumScaleFromZoomLevel(zoomLevel, 
+                        wmtSource);
+                    
+                zoomToScale(scale);
+            } else {
+                throw new Exception("wmtSource is null"); //$NON-NLS-1$
+            }
+        } catch (Exception e) {
+            WMTPlugin.log("[WMTZoomLevelSwitcher.zoomToZoomLevel] Zooming failed: " + zoomLevel, e); //$NON-NLS-1$
+        }
     }
     
     private void zoomToScale(double scale) {

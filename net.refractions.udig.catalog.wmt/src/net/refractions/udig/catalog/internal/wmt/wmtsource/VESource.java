@@ -28,13 +28,6 @@ public class VESource extends WMTSource {
     }
 
     @Override
-    public Map<String, Tile> cutExtentIntoTiles( ReferencedEnvelope extent, 
-            double scale, int scaleFactor, boolean recommendedZoomLevel, 
-            WMTLayerProperties layerProperties) {
-        throw new NotImplementedException();
-    }
-
-    @Override
     public WMTTileFactory getTileFactory() {
         return null;
     }

@@ -30,6 +30,7 @@ import net.refractions.udig.catalog.CatalogPlugin;
 import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.internal.PreferenceConstants;
 import net.refractions.udig.catalog.internal.wms.WmsPlugin;
+import net.refractions.udig.catalog.internal.wmt.WMTRenderJob;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTileImageReadWriter;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTileSetWrapper;
@@ -200,8 +201,11 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             double scale = getContext().getViewportModel().getScaleDenominator();
             WMTPlugin.trace("[BasicWMTRender.render] Scale: " + scale); //$NON-NLS-1$
             
+            // build render-job
+            WMTRenderJob renderJob = WMTRenderJob.createRenderJob(mapExtent, scale, wmtSource);
+                       
             //Find tiles
-            Map<String, Tile> tileList = wmtSource.cutExtentIntoTiles(mapExtentProjected, scale, WMTSource.SCALE_FACTOR, false, layerProperties);
+            Map<String, Tile> tileList = wmtSource.cutExtentIntoTiles(renderJob, WMTSource.SCALE_FACTOR, false, layerProperties);
             
             // if we have nothing to display, return
             if (tileList.isEmpty()) {
@@ -213,7 +217,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             if (tilesCount > WARNING_TOO_MANY_TILES) {
                 // too many tiles, let's use the recommended zoom-level
                 tileList.clear();
-                tileList = wmtSource.cutExtentIntoTiles(mapExtentProjected, scale, WMTSource.SCALE_FACTOR, true, layerProperties);                
+                tileList = wmtSource.cutExtentIntoTiles(renderJob, WMTSource.SCALE_FACTOR, true, layerProperties);                
                 tilesCount = tileList.size();
                 
                 // show a warning about this

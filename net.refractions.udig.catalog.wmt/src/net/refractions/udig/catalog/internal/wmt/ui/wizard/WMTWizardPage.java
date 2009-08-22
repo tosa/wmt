@@ -17,7 +17,6 @@ import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.MQControl;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.OSMCloudMadeControl;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.OSMControl;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.WMTWizardControl;
-import net.refractions.udig.catalog.internal.wmt.wmtsource.CSSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASourceManager;

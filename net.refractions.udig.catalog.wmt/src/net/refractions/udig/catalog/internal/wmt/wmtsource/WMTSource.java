@@ -2,12 +2,15 @@ package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import net.refractions.udig.catalog.internal.wmt.Trace;
 import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
+import net.refractions.udig.catalog.internal.wmt.WMTRenderJob;
+import net.refractions.udig.catalog.internal.wmt.WMTScaleZoomLevelMatcher;
 import net.refractions.udig.catalog.internal.wmt.WMTService;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
@@ -266,26 +269,20 @@ public abstract class WMTSource {
      * The scale-factor (0-100) decides whether the tiles will be
      * scaled down (100) or scaled up (0).
      *
-     * @param scale The current map scale.
+     * @param renderJob Contains all the needed information
      * @param scaleFactor Scale-factor (0-100)
      * @return Zoom-level
      */
-    public int getZoomLevelFromMapScale(double scale, int scaleFactor) {
+    public int getZoomLevelFromMapScale(WMTScaleZoomLevelMatcher zoomLevelMatcher, int scaleFactor) {
+        // fallback scale-list
         double[] scaleList = getScaleList();
+        // during the calculations this list caches already calculated scales
+        double[] tempScaleList = new double[scaleList.length];
+        Arrays.fill(tempScaleList, Double.NaN);
         
         assert(scaleList != null && scaleList.length > 0);
         
-        // Start with the most detailed zoom-level and search the best-fitting one
-        int zoomLevel = scaleList.length - 1;
-        for (int i = scaleList.length-2; i >= 0; i--) {
-            if (Double.isNaN(scaleList[i])) break;
-            if (scale < scaleList[i]) break;
-            
-            zoomLevel = i;
-            if (scale > scaleList[i+1]) {
-                zoomLevel = i;
-            }
-        }
+        int zoomLevel = zoomLevelMatcher.getZoomLevelFromScale(this, tempScaleList);
         
         // Now apply the scale-factor
         if (zoomLevel == 0) {
@@ -294,11 +291,11 @@ public abstract class WMTSource {
             int upperScaleIndex = zoomLevel - 1;
             int lowerScaleIndex = zoomLevel;
             
-            double deltaScale = scaleList[upperScaleIndex] - scaleList[lowerScaleIndex];
+            double deltaScale = tempScaleList[upperScaleIndex] - tempScaleList[lowerScaleIndex];
             double rangeScale = (scaleFactor / 100d) * deltaScale;
-            double limitScale = scaleList[lowerScaleIndex] + rangeScale;
+            double limitScale = tempScaleList[lowerScaleIndex] + rangeScale;
             
-            if (scale > limitScale) {
+            if (zoomLevelMatcher.getScale() > limitScale) {
                 return upperScaleIndex;
             } else {
                 return lowerScaleIndex;
@@ -314,10 +311,10 @@ public abstract class WMTSource {
      * @param useRecommended always use the calculated zoom-level, do not use the one the user selected
      * @return
      */
-    public int getZoomLevelToUse(double scale, int scaleFactor, boolean useRecommended,
+    public int getZoomLevelToUse(WMTScaleZoomLevelMatcher zoomLevelMatcher, int scaleFactor, boolean useRecommended,
             WMTLayerProperties layerProperties) {
         if (useRecommended) {
-            return getZoomLevelFromMapScale(scale, scaleFactor);            
+            return getZoomLevelFromMapScale(zoomLevelMatcher, scaleFactor);            
         }
         
         // try to load the property values
@@ -338,7 +335,7 @@ public abstract class WMTSource {
             return zoomLevel;
         } else {
             // No valid property values or automatic selection of the zoom-level
-            return getZoomLevelFromMapScale(scale, scaleFactor);
+            return getZoomLevelFromMapScale(zoomLevelMatcher, scaleFactor);
         }
     }
     
@@ -395,18 +392,18 @@ public abstract class WMTSource {
      * @param recommendedZoomLevel Always use the calculated zoom-level, do not use the one the user selected
      * @return The list of found tiles.
      */
-    public Map<String, Tile> cutExtentIntoTiles(ReferencedEnvelope extent, double scale, 
+    public Map<String, Tile> cutExtentIntoTiles(WMTRenderJob renderJob, 
             int scaleFactor, boolean recommendedZoomLevel, WMTLayerProperties layerProperties) {        
         // only continue, if we have tiles that cover the requested extent
-        if (!extent.intersects((Envelope) getBounds())) {
+        if (!renderJob.getMapExtentTileCrs().intersects((Envelope) getBounds())) {
             return Collections.emptyMap();
         }
         
-        extent = normalizeExtent(extent);
+        ReferencedEnvelope extent = normalizeExtent(renderJob.getMapExtentTileCrs());
         
         WMTTileFactory tileFactory = getTileFactory();
                 
-        WMTZoomLevel zoomLevel = tileFactory.getZoomLevel(getZoomLevelToUse(scale, 
+        WMTZoomLevel zoomLevel = tileFactory.getZoomLevel(getZoomLevelToUse(renderJob.getZoomLevelMatcher(), 
                 scaleFactor, recommendedZoomLevel, layerProperties), this);
         long maxNumberOfTiles = zoomLevel.getMaxTileNumber();
                 

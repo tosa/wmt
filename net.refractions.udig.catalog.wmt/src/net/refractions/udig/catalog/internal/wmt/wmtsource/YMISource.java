@@ -35,11 +35,6 @@ public class YMISource extends WMTSource {
         return TILESIZE;
     }
 
-    @Override
-    public Map<String, Tile> cutExtentIntoTiles( ReferencedEnvelope extent, double scale,
-            int scaleFactor, boolean recommendedZoomLevel, WMTLayerProperties layerProperties ) {
-        return null;
-    }
     /*
      * Yahoo Map Image zoom-levels are in range [1,12],
      * see also:

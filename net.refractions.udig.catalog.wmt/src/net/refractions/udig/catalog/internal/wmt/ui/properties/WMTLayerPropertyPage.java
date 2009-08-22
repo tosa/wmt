@@ -17,6 +17,8 @@ package net.refractions.udig.catalog.internal.wmt.ui.properties;
 import java.io.IOException;
 
 import net.refractions.udig.catalog.IGeoResource;
+import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
+import net.refractions.udig.catalog.internal.wmt.WMTScaleZoomLevelMatcher;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.catalog.wmt.internal.Messages;
 import net.refractions.udig.project.internal.Layer;
@@ -33,6 +35,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.ui.IWorkbenchPropertyPage;
 import org.eclipse.ui.dialogs.PropertyPage;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 
 /**
  * Property page for WMT layers
@@ -45,9 +48,7 @@ public class WMTLayerPropertyPage extends PropertyPage implements IWorkbenchProp
     
     private Layer layer;
     private WMTSource wmtSource;
-    
-    private double mapScale;
-    
+        
     //region GUI objects
     private Button btnAutomatic;
     private Button btnManual;
@@ -80,7 +81,7 @@ public class WMTLayerPropertyPage extends PropertyPage implements IWorkbenchProp
     //endregion
     
     @Override
-    protected Control createContents( Composite parent ) {
+    protected Control createContents(Composite parent) {
         layer = (Layer) getElement();
         
         //region Get GeoResource/Source/WMTSource for this layer
@@ -98,8 +99,6 @@ public class WMTLayerPropertyPage extends PropertyPage implements IWorkbenchProp
         // get persistent properties from layer to restore the settings
         layerProperties = new WMTLayerProperties(layer.getStyleBlackboard());
         
-        // we also need the map-scale to calculate the recommended zoom-level        
-        mapScale = layer.getMap().getViewportModel().getScaleDenominator();
         //endregion
                
         //region build GUI
@@ -255,9 +254,24 @@ public class WMTLayerPropertyPage extends PropertyPage implements IWorkbenchProp
      *
      * @return
      */
-    private int getDefaultZoomLevel() {
-        // todo: get scale-factor from settings!
-        return wmtSource.getZoomLevelFromMapScale(mapScale, WMTSource.SCALE_FACTOR);
+    private int getDefaultZoomLevel() {        
+        try {
+            // todo: get scale-factor from settings!
+            int scaleFactor = WMTSource.SCALE_FACTOR;
+            
+            // we also need the map-scale to calculate the recommended zoom-level        
+            double mapScale = layer.getMap().getViewportModel().getScaleDenominator();
+            ReferencedEnvelope mapExtentMapCrs = layer.getMap().getViewportModel().getBounds();
+            
+            WMTScaleZoomLevelMatcher zoomLevelMatcher = WMTScaleZoomLevelMatcher.createMatcher(
+                    mapExtentMapCrs, mapScale, wmtSource);
+            
+            return wmtSource.getZoomLevelFromMapScale(zoomLevelMatcher, scaleFactor);
+        } catch (Exception exc) {
+            WMTPlugin.log("[WMTLayerPropertyPage.getDefaultZoomLevel] Failed ", exc); //$NON-NLS-1$
+            
+            return -1;
+        }
     }
     
     //endregion
