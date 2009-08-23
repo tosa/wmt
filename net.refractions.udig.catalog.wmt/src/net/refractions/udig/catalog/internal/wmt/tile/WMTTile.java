@@ -61,36 +61,6 @@ public abstract class WMTTile implements Tile{
     public abstract WMTTile getRightNeighbour();
     public abstract WMTTile getLowerNeighbour();
        
-    
-    /**
-     * 
-     * @see net.refractions.udig.catalog.wmsc.server.WMSTile#loadTile(org.eclipse.core.runtime.IProgressMonitor)
-     */
-//    public void download() {
-//        BufferedImage bufImage = null;
-//        try {
-//
-//            // todo: check if file exists via http-return-code?
-////            HttpURLConnection connection = null;
-////            connection = (HttpURLConnection) getUrl().openConnection();
-////
-////             if (connection.getResponseCode() == 200)
-//            
-//            bufImage = ImageIO.read(getUrl()); 
-//
-//            if (bufImage != null) {
-//                image = bufImage;
-//                                
-//                System.out.println(image.getWidth() + " - " + image.getHeight());
-//            } else {
-//                // create an error buffered image
-//                System.out.println("download failed: " + getUrl().toString());
-//            }
-//        } catch (Exception e) {
-//            System.out.println("download failed: " + getUrl().toString());
-//        }      
-//    }
-
     public Envelope getBounds() {
         return extent;
     }

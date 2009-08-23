@@ -18,6 +18,7 @@ import java.io.IOException;
 
 import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
+import net.refractions.udig.catalog.internal.wmt.WMTRenderJob;
 import net.refractions.udig.catalog.internal.wmt.WMTScaleZoomLevelMatcher;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.catalog.wmt.internal.Messages;
@@ -256,8 +257,7 @@ public class WMTLayerPropertyPage extends PropertyPage implements IWorkbenchProp
      */
     private int getDefaultZoomLevel() {        
         try {
-            // todo: get scale-factor from settings!
-            int scaleFactor = WMTSource.SCALE_FACTOR;
+            int scaleFactor = WMTRenderJob.getScaleFactor();
             
             // we also need the map-scale to calculate the recommended zoom-level        
             double mapScale = layer.getMap().getViewportModel().getScaleDenominator();

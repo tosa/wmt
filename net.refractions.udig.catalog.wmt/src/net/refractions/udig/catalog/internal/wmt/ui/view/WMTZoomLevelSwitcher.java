@@ -6,6 +6,7 @@ import java.util.List;
 
 import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.internal.wmt.WMTPlugin;
+import net.refractions.udig.catalog.internal.wmt.WMTRenderJob;
 import net.refractions.udig.catalog.internal.wmt.WMTScaleZoomLevelMatcher;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 import net.refractions.udig.catalog.wmt.internal.Messages;
@@ -426,7 +427,7 @@ public class WMTZoomLevelSwitcher extends ViewPart {
                 WMTScaleZoomLevelMatcher zoomLevelMatcher = getZoomLevelMatcher(wmtSource);
 
                 int zoomLevel = wmtSource.getZoomLevelFromMapScale(zoomLevelMatcher,
-                        WMTSource.SCALE_FACTOR); //todo!
+                        WMTRenderJob.getScaleFactor());
 
                 setSelectedZoomLevel(zoomLevel);
                 updateZoomButtons(zoomLevel);

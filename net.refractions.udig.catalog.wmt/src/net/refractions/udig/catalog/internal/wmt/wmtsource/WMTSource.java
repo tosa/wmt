@@ -33,10 +33,7 @@ import com.vividsolutions.jts.geom.Envelope;
  * @author to.srwn
  * @since 1.1.0
  */
-public abstract class WMTSource {
-    // todo: move into properties
-    public static int SCALE_FACTOR = 50;
-    
+public abstract class WMTSource {   
     
     private String name;
     

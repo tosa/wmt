@@ -1,5 +1,6 @@
 package net.refractions.udig.catalog.internal.wmt;
 
+import net.refractions.udig.catalog.internal.wmt.ui.preferences.WMTPreferenceConstants;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
 
 import org.geotools.geometry.jts.JTS;
@@ -64,6 +65,21 @@ public class WMTRenderJob {
                 transformTileCrsToTilesProjected,
                 transformTilesProjectedToMap,
                 zoomLevelMatcher);
+    }
+    
+    public static int getScaleFactor() {
+        return WMTPlugin.getDefault().
+            getPreferenceStore().getInt(WMTPreferenceConstants.P_WMT_SCALEFACTOR);
+    }
+    
+    public static int getTileLimitWarning() {
+        return WMTPlugin.getDefault().
+            getPreferenceStore().getInt(WMTPreferenceConstants.P_WMT_TILELIMIT_WARNING);
+    }
+    
+    public static int getTileLimitError() {
+        return WMTPlugin.getDefault().
+            getPreferenceStore().getInt(WMTPreferenceConstants.P_WMT_TILELIMIT_ERROR);
     }
     
     public WMTScaleZoomLevelMatcher getZoomLevelMatcher() {

@@ -30,6 +30,15 @@ public class Messages extends NLS {
     public static String Properties_Layer_Warning;
     public static String Properties_Layer_Error;
     
+    public static String Preferences_ScaleFactor_Title;
+    public static String Preferences_ScaleFactor_FastRendering;
+    public static String Preferences_ScaleFactor_HighestQuality;
+    public static String Preferences_ScaleFactor_Description;
+    public static String Preferences_TileLimit_Title;
+    public static String Preferences_TileLimit_Warning;
+    public static String Preferences_TileLimit_Error;
+    public static String Preferences_TileLimit_Description;
+    
     public static String ZoomLevelSwitcher_Layer; 
     public static String ZoomLevelSwitcher_ZoomLevel;
     public static String ZoomLevelSwitcher_ZoomIn;

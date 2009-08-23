@@ -104,4 +104,19 @@
           name="%wizardWW.name">
     </wizardPage>
   </extension> 
+
+
+  <extension
+       point="org.eclipse.core.runtime.preferences">
+    <initializer class="net.refractions.udig.catalog.internal.wmt.ui.preferences.WMTPreferenceInitializer"/>
+  </extension>
+  <extension
+       point="org.eclipse.ui.preferencePages">
+    <page
+          category="net.refractions.udig.render.internal.wmsc.basic.wmsctile"
+          class="net.refractions.udig.catalog.internal.wmt.ui.preferences.WMTTilePreferencesPage"
+          id="net.refractions.udig.render.internal.wmt.basic.wmttile"
+          name="%preferences.name">
+    </page>
+  </extension>
 </plugin>

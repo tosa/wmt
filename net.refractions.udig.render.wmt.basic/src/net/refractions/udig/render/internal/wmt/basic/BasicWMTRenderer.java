@@ -76,9 +76,6 @@ import com.vividsolutions.jts.geom.Envelope;
  * </p>
  */
 public class BasicWMTRenderer extends RendererImpl {
-    //todo: move to settings
-    private static int WARNING_TOO_MANY_TILES = 40;
-    private static int ERROR_TOO_MANY_TILES = 120;
     
     private static StyleBuilder styleBuilder = new StyleBuilder();
 
@@ -196,7 +193,7 @@ public class BasicWMTRenderer extends RendererImpl {
             
             // Find tiles
             Map<String, Tile> tileList = wmtSource.cutExtentIntoTiles(renderJob,
-                    WMTSource.SCALE_FACTOR, false, layerProperties);
+                    WMTRenderJob.getScaleFactor(), false, layerProperties);
 
             // if we have nothing to display, return
             if (tileList.isEmpty()) {
@@ -412,13 +409,20 @@ public class BasicWMTRenderer extends RendererImpl {
     }
 
     private Map<String, Tile> checkTooManyTiles(ILayer layer, WMTSource wmtSource,
-            WMTLayerProperties layerProperties, WMTRenderJob renderJob, Map<String, Tile> tileList ) {
+            WMTLayerProperties layerProperties, WMTRenderJob renderJob, 
+            Map<String, Tile> tileList) {
         int tilesCount = tileList.size();
-        if (tilesCount > WARNING_TOO_MANY_TILES) {
-            // too many tiles, let's use the recommended zoom-level
-            tileList.clear();
-            tileList = wmtSource.cutExtentIntoTiles(renderJob, WMTSource.SCALE_FACTOR, true, layerProperties);                
-            tilesCount = tileList.size();
+        
+        if (tilesCount > WMTRenderJob.getTileLimitWarning()) {
+            // too many tiles, let's use the recommended zoom-level (if it wasn't already used)
+            Boolean selectionAutomatic = layerProperties.getSelectionAutomatic();
+            
+            if ((selectionAutomatic != null) && (selectionAutomatic == false)) {
+                tileList.clear();
+                tileList = wmtSource.cutExtentIntoTiles(renderJob, WMTRenderJob.getScaleFactor(), 
+                        true, layerProperties);                
+                tilesCount = tileList.size();
+            }
             
             // show a warning about this
             layer.setStatus(ILayer.WARNING);
@@ -427,7 +431,7 @@ public class BasicWMTRenderer extends RendererImpl {
             WMTPlugin.trace("[BasicWMTRender.render] Set WARNING_TOO_MANY_TILES"); //$NON-NLS-1$
         }
                     
-        if (tilesCount > ERROR_TOO_MANY_TILES) {
+        if (tilesCount > WMTRenderJob.getTileLimitError()) {
             // this is just too much, cancel            
             WMTPlugin.trace("[BasicWMTRender.render] Set ERROR_TOO_MANY_TILES"); //$NON-NLS-1$
             
@@ -516,8 +520,7 @@ public class BasicWMTRenderer extends RendererImpl {
                         ((int)tileSize.getMaxY()-113));
             }
         } catch (Throwable t) {
-            t.printStackTrace();
-            System.out.println("Error Rendering tile. Painting Tile:" + (coverage != null ? coverage.getName() : "")); //$NON-NLS-1$ //$NON-NLS-2$
+            WMTPlugin.log("Error Rendering tile. Painting Tile " +  tile.getId(), t); //$NON-NLS-1$
         }
     }
     
@@ -560,9 +563,8 @@ public class BasicWMTRenderer extends RendererImpl {
                 graphics.drawLine((int)tileSize.getMaxX(), (int)tileSize.getMinY(), (int)tileSize.getMaxX(), (int)tileSize.getMaxY());
                 graphics.drawLine((int)tileSize.getMinX(), (int)tileSize.getMaxY(), (int)tileSize.getMaxX(), (int)tileSize.getMaxY());
             }
-        } catch (Throwable t) {
-            t.printStackTrace();
-            WMTPlugin.log("Error Rendering Blank tile. Painting Tile", t); //$NON-NLS-1$
+        } catch (Throwable t) {            
+            WMTPlugin.log("Error Rendering Blank tile. Painting Tile: " + tile.getId(), t); //$NON-NLS-1$
         }
     } 
     
