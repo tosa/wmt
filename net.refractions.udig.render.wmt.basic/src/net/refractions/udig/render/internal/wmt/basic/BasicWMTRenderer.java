@@ -81,7 +81,7 @@ public class BasicWMTRenderer extends RendererImpl {
 
     private TileListenerImpl listener = new TileListenerImpl();
     
-    private final static boolean testing = true;  // for debugging
+    private final static boolean testing = false;  // for debugging
     private static final boolean TESTING = WMTPlugin.getDefault().isDebugging();
     
     private static int staticid = 0; // for debugging
