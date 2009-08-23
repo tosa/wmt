@@ -20,30 +20,13 @@ import org.eclipse.osgi.util.NLS;
 
 public class Messages extends NLS {
 	private static final String BUNDLE_NAME = "net.refractions.udig.render.wmt.basic.internal.messages"; //$NON-NLS-1$
-	public static String BasicWMSRenderer2_error;
-	public static String BasicWMSRenderer2_errorObtainingImage;
-	public static String BasicWMSRenderer2_no_layers_to_render;
-	public static String BasicWMSRenderer2_unable_to_decode_image;
-    public static String BasicWMSRendererPreferencePage_setOrder;
-	public static String BasicWMSRendererPreferencePage_useDefaults;
-	public static String BasicWMSRenderer2_refreshJob_title;
-	public static String BasicWMSRendererPreferencePage_warning;
-    public static String projectionwarning0;
-    public static String WMSCTilePreferencePage_pageTitle;
-	public static String WMSCTilePreferencePage_pageDescription;
-	public static String WMSCTilePreferencePage_caching_desc;
-	public static String WMSCTilePreferencePage_inmemory;
-	public static String WMSCTilePreferencePage_ondisk;
-	public static String WMSCTilePreferencePage_disklabel;
-	public static String WMSCTilePreferencePage_clearcachebtn;
-	public static String WMSCTilePreferencePage_clearcacheConfirm;
-	public static String WMSCTilePreferencePage_clearcacheError;
-	public static String WMSCTilePreferencePage_clearcacheSuccess;
-	public static String WMSCTilePreferencePage_maxConRequests;
 	
-	public static String WARNING_TOO_MANY_TILES;
-    public static String ERROR_TOO_MANY_TILES;
-	public static String ERROR_LAYER;
+	public static String Render_Error_NoSource;
+    public static String Render_Error_Projection;
+    public static String Render_Error_NoData;
+    public static String Render_Error_TooManyTiles;
+	
+	public static String Render_Warning_TooManyTiles;
     
 	static {
 		// initialize resource bundle

@@ -20,16 +20,18 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import net.refractions.udig.catalog.CatalogPlugin;
 import net.refractions.udig.catalog.IGeoResource;
 import net.refractions.udig.catalog.internal.PreferenceConstants;
-import net.refractions.udig.catalog.internal.wms.WmsPlugin;
 import net.refractions.udig.catalog.internal.wmt.WMTRenderJob;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTile;
 import net.refractions.udig.catalog.internal.wmt.tile.WMTTileImageReadWriter;
@@ -47,7 +49,6 @@ import net.refractions.udig.catalog.wmsc.server.WMSTile;
 import net.refractions.udig.project.ILayer;
 import net.refractions.udig.project.internal.StyleBlackboard;
 import net.refractions.udig.project.internal.render.impl.RendererImpl;
-import net.refractions.udig.project.render.IMultiLayerRenderer;
 import net.refractions.udig.project.render.RenderException;
 import net.refractions.udig.render.internal.wmsc.basic.WMSCTileCaching;
 import net.refractions.udig.render.wmt.basic.WMTPlugin;
@@ -58,15 +59,12 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.geometry.Envelope2D;
-import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.geotools.referencing.CRS;
 import org.geotools.renderer.lite.gridcoverage2d.GridCoverageRenderer;
 import org.geotools.styling.RasterSymbolizer;
 import org.geotools.styling.StyleBuilder;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 
 import com.vividsolutions.jts.geom.Coordinate;
@@ -77,7 +75,7 @@ import com.vividsolutions.jts.geom.Envelope;
  * <p>
  * </p>
  */
-public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRenderer {
+public class BasicWMTRenderer extends RendererImpl {
     //todo: move to settings
     private static int WARNING_TOO_MANY_TILES = 40;
     private static int ERROR_TOO_MANY_TILES = 120;
@@ -86,7 +84,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
 
     private TileListenerImpl listener = new TileListenerImpl();
     
-    private final static boolean testing = false;  // for debugging
+    private final static boolean testing = true;  // for debugging
     private static final boolean TESTING = WMTPlugin.getDefault().isDebugging();
     
     private static int staticid = 0; // for debugging
@@ -102,317 +100,363 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
      */
     private BlockingQueue<Tile> tilesToDraw_queue = new PriorityBlockingQueue<Tile>();
     
-        
-    /**
-     * Construct a new BasicWMTRenderer
-     */
     public BasicWMTRenderer() {
     }
 
     @Override
-    public void render( Graphics2D destination, IProgressMonitor monitor ) throws RenderException {
-        render(destination, getContext().getImageBounds(), monitor);
+    public void render(Graphics2D destination, IProgressMonitor monitor) throws RenderException {
+        render(destination, getRenderBounds(), monitor);
     }
 
     @Override
-    public void render( IProgressMonitor monitor ) throws RenderException {
+    public void render(IProgressMonitor monitor) throws RenderException {
         Graphics2D graphics = (Graphics2D) getContext().getImage().getGraphics();
         render(graphics, getRenderBounds(), monitor);
     }
 
-    public void render( Graphics2D destination, Envelope bounds2,
-            IProgressMonitor monitor ) throws RenderException {
+//    private int count = 1;
+//    private IProgressMonitor previousMonitor = null;
+//    public void render(Graphics2D destination, Envelope bounds2,
+//            IProgressMonitor monitor) throws RenderException {
+//        WMTPlugin.trace("[BasicWMTRender.render] is called"); //$NON-NLS-1$
+//        try {
+//            int count = this.count++;
+//            
+//            setState(STARTING);
+//            // check if the same Monitor is shared for every render call (no, it is not)
+//            System.out.println("Rendercall: " + count + " " + (previousMonitor == monitor));
+//            previousMonitor = monitor;
+//            
+//            if (monitor.isCanceled()) {
+//                System.out.println("cancel 1 " + count);
+////                setState(IRenderer.CANCELLED);
+////                monitor.done();
+//                return;
+//            }
+//            
+//            System.out.println("Before sleep " + count);
+//            monitor.beginTask("Render WMT", 100); //$NON-NLS-1$
+//            Thread.sleep(10000);
+//            System.out.println("Behind sleep " + count);
+//            
+//            if (monitor.isCanceled()) {
+//                System.out.println("cancel 2 " + count);
+////                setState(IRenderer.CANCELLED);
+////                monitor.done();
+//                return;
+//            }
+//            //monitor.done();
+//        } catch (Exception e) {
+//            System.out.println("Wait interrupted");
+//        }
+//    }
+    
+    public void render(Graphics2D destination, Envelope bounds, IProgressMonitor monitor)
+            throws RenderException {
         WMTPlugin.trace("[BasicWMTRender.render] is called"); //$NON-NLS-1$
-        
-        if (monitor == null){
+
+        if (monitor == null) {
             monitor = new NullProgressMonitor();
         }
         monitor.beginTask("Render WMT", 100); //$NON-NLS-1$
         setState(STARTING);
-                
-        ILayer layer = getContext().getLayer();
-        // assume everything will work fine
-        layer.setStatus(ILayer.DONE); 
-        layer.setStatusMessage(""); //$NON-NLS-1$
         
-        IGeoResource resource = layer.findGeoResource(WMTSource.class);
-        
-        if (resource == null) {
-            setState(DONE);
-            monitor.done();
-            
-            return;
-        }
-        
+        ILayer layer = null;
         try {
-            WMTSource wmtSource = null;
-            try {            
-                wmtSource = resource.resolve(WMTSource.class, null);
-            } catch (Exception e) {
-                wmtSource = null;
-            }
-            
-            if (wmtSource == null) {
-                setState(DONE);
-                monitor.done();
-                
-                return;
-            }
-            
-            //region Layer properties
-            WMTLayerProperties layerProperties = new WMTLayerProperties((StyleBlackboard) layer.getStyleBlackboard());
-            //endregion
-            
-            // Get map extent, which should be drawn 
-            //todo: difference between getRenderBounds() and context.getViewportModel().getBounds() 
-            // and getContext().getImageBounds()??
+            layer = getContext().getLayer();
+            // assume everything will work fine
+            layer.setStatus(ILayer.DONE);
+            layer.setStatusMessage(""); //$NON-NLS-1$
+
+            WMTSource wmtSource = getWmtSourceFromLayer(layer);
+
+            if (wmtSource == null)
+                throw new UnsupportedOperationException(Messages.Render_Error_NoSource);
+
+            // Layer properties
+            WMTLayerProperties layerProperties = new WMTLayerProperties((StyleBlackboard) layer
+                    .getStyleBlackboard());
+
+            // Get map extent, which should be drawn
             ReferencedEnvelope mapExtent = getRenderBounds();
-            if (mapExtent == null){
-                //mapExtent = getContext().getImageBounds();
+            if (mapExtent == null) {
                 mapExtent = context.getViewportModel().getBounds();
             }
-                        
-            //region CRS and transformations
-            // Get several CRS's            
-            CoordinateReferenceSystem crsMap = mapExtent.getCoordinateReferenceSystem();
-            CoordinateReferenceSystem crsTiles = wmtSource.getTileCrs(); // the CRS used for the tile cutting 
-            CoordinateReferenceSystem crsTilesProjected = wmtSource.getProjectedTileCrs(); // the CRS the tiles were projected in
-                       
-            //region get transformations for reprojections between the CRS's  
-            // Transformation: MapCrs -> TileCrs (mostly WGS_84) 
-            MathTransform transformMapToTileCrs = getTransformation(crsMap, crsTiles);
-            
-            // Transformation: TileCrs (mostly WGS_84) -> MapCrs (needed for the blank tiles)
-            MathTransform transformTileCrsToMap = getTransformation(crsTiles, crsMap);
-            
-            // Transformation: TileCrs (mostly WGS_84) -> TilesProjectedCrs (mostly Google's Mercator)
-            MathTransform transformTileCrsToTilesProjected = getTransformation(crsTiles, crsTilesProjected);
-                        
-            // Transformation: TilesProjectedCrs (mostly Google's Mercator) -> MapCrs
-            MathTransform transformTilesProjectedToMap = getTransformation(crsTilesProjected, crsMap);           
-            //endregion
-            
-            // Get the mapExtent in the tiles CRS
-            ReferencedEnvelope mapExtentProjected = getProjectedEnvelope(mapExtent, 
-                    crsTiles, transformMapToTileCrs);
-            //endregion
-            
+
             // Scale
             double scale = getContext().getViewportModel().getScaleDenominator();
             WMTPlugin.trace("[BasicWMTRender.render] Scale: " + scale); //$NON-NLS-1$
             
-            // build render-job
-            WMTRenderJob renderJob = WMTRenderJob.createRenderJob(mapExtent, scale, wmtSource);
-                       
-            //Find tiles
-            Map<String, Tile> tileList = wmtSource.cutExtentIntoTiles(renderJob, WMTSource.SCALE_FACTOR, false, layerProperties);
+            WMTRenderJob renderJob = null;
+            try {
+                renderJob = WMTRenderJob.createRenderJob(mapExtent, scale, wmtSource);
+            } catch (Exception exc) {
+                throw new UnsupportedOperationException(Messages.Render_Error_Projection);
+            }
             
+            // Find tiles
+            Map<String, Tile> tileList = wmtSource.cutExtentIntoTiles(renderJob,
+                    WMTSource.SCALE_FACTOR, false, layerProperties);
+
             // if we have nothing to display, return
             if (tileList.isEmpty()) {
-                return;
+                throw new UnsupportedOperationException(Messages.Render_Error_NoData);
             }
-            
-            // check if these are to many tiles
-            int tilesCount = tileList.size();
-            if (tilesCount > WARNING_TOO_MANY_TILES) {
-                // too many tiles, let's use the recommended zoom-level
-                tileList.clear();
-                tileList = wmtSource.cutExtentIntoTiles(renderJob, WMTSource.SCALE_FACTOR, true, layerProperties);                
-                tilesCount = tileList.size();
-                
-                // show a warning about this
-                layer.setStatus(ILayer.WARNING);
-                layer.setStatusMessage(Messages.WARNING_TOO_MANY_TILES);
-                
-                WMTPlugin.trace("[BasicWMTRender.render] Set WARNING_TOO_MANY_TILES"); //$NON-NLS-1$
+
+            // check if this are too many tiles
+            if ((tileList = checkTooManyTiles(layer, wmtSource, layerProperties, renderJob,
+                    tileList)).isEmpty()) {
+                throw new UnsupportedOperationException(Messages.Render_Error_TooManyTiles);
             }
-                        
-            if (tilesCount > ERROR_TOO_MANY_TILES) {
-                // this is just too much, cancel
-                layer.setStatus(ILayer.ERROR);
-                layer.setStatusMessage(Messages.ERROR_TOO_MANY_TILES);
-                
-                WMTPlugin.trace("[BasicWMTRender.render] Set ERROR_TOO_MANY_TILES"); //$NON-NLS-1$
-                
-                return;                
-            }
-            
+
             // Download and display tiles
-            
-            // look up the preference for caching tiles on-disk or in 
+
+            // look up the preference for caching tiles on-disk or in
             // memory and use the proper tilerange for that.
-            TileRange range = null;
-            
-            TileSet tileset = new WMTTileSetWrapper(wmtSource);
-     
-            String value = CatalogPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.P_WMSCTILE_CACHING);
-            if (value.equals(WMSCTileCaching.ONDISK.toString())) {
-                String dir = CatalogPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.P_WMSCTILE_DISKDIR);
-                WMTTileImageReadWriter tileReadWriter = new WMTTileImageReadWriter(dir);
-                
-                range = new TileRangeOnDisk(null, tileset, mapExtentProjected, tileList, 
-                        requestTileWorkQueue, writeTileWorkQueue, tileReadWriter);
-            } else {
-                range = new TileRangeInMemory(null, tileset, mapExtentProjected, tileList, requestTileWorkQueue);
-            }
-            
-            // create an empty raster symbolizer for rendering 
-            RasterSymbolizer style = styleBuilder.createRasterSymbolizer(); 
-            
-         // setup how much each tile is worth for the monitor work %
+            TileRange range = createTileRange(wmtSource, renderJob, tileList);
+
+            // create an empty raster symbolizer for rendering
+            RasterSymbolizer style = styleBuilder.createRasterSymbolizer();
+
+            // setup how much each tile is worth for the monitor work %
             int tileCount = range.getTileCount();
-            int tileWorth = (tileCount/100) * tileCount;
-            
+            int tileWorth = (tileCount / 100) * tileCount;
+
             int thisid = 0;
             if (testing) {
                 staticid++;
                 thisid = staticid;
             }
-            
-            // first render any tiles that are ready and render non-ready tiles with blank images 
+
+            // first render any tiles that are ready and render non-ready tiles with blank images
             Map<String, Tile> tiles = range.getTiles();
             Set<String> notRenderedTiles = new HashSet<String>();
-            Set<String> renderedTiles = new HashSet<String>();            
-          
-            for (String key : tiles.keySet()) {
-                if (monitor.isCanceled()) {
-                    setState(CANCELLED);   
-                    if (testing) {
-                        System.out.println("monitor CANCELED!!!: "+thisid); //$NON-NLS-1$
-                    }
-                    return;
-                }
-                Tile tile = tiles.get(key);
-                if (tile != null && tile.getBufferedImage() != null && tile.getTileState() != WMSTile.INERROR) {
-                    try {
-                        renderedTiles.add(key);
-                        renderTile(destination, (WMTTile) tile, style, crsMap, crsTilesProjected, 
-                            transformTileCrsToTilesProjected, transformTilesProjectedToMap);
-                    } catch(Exception exc) {
-                        WMTPlugin.log("[BasicWMTRender.render] renderTile failed (1): " + tile.getId(), exc); //$NON-NLS-1$
-                    }
-                    monitor.worked(tileWorth);  // inc the monitor work by 1 tile
-                }
-                else {
-                    // set the tile blank (removing any previous content) and add it
-                    // to be drawn later
-                    notRenderedTiles.add(key);
-                    renderBlankTile(destination, (WMTTile) tile, crsMap, transformTileCrsToMap);
-                }
-            }      
-            setState(RENDERING);
+            Set<String> renderedTiles = new HashSet<String>();
+
+            renderReadyTiles(destination, monitor, renderJob, style, tileWorth, thisid, tiles,
+                    notRenderedTiles, renderedTiles);
             
+            setState(RENDERING);
+
             // if the tilerange is not already completed, then load
             // the missing tiles
             if (!notRenderedTiles.isEmpty()) {
-                if (monitor.isCanceled()) {
-                    setState(CANCELLED);   
-                    if (testing) {
-                        System.out.println("monitor CANCELED!!!: "+thisid); //$NON-NLS-1$
-                    }
-                    return;
-                }                
+                renderNotRenderedTiles(destination, monitor, renderJob, range, style, tileWorth,
+                        thisid, notRenderedTiles, renderedTiles);
+            }
+
+            if (testing) {
+                System.out.println("DONE!!!: " + thisid); //$NON-NLS-1$
+            }
+        } catch (UnsupportedOperationException doneExc) {
+            setDone(monitor);
+            
+            layer.setStatus(ILayer.ERROR);
+            layer.setStatusMessage(doneExc.getMessage());
+            WMTPlugin.log("[BasicWMTRenderer.render] Error: ", doneExc); //$NON-NLS-1$
+
+            return;
+        } catch (CancellationException cancelExc) {
+            return;
+        } catch (Exception ex) {
+            WMTPlugin.log("[BasicWMTRenderer.render] Unexpected Error: ", ex); //$NON-NLS-1$
+        }
+
+        setDone(monitor);
+    }
+
+    private void renderNotRenderedTiles(Graphics2D destination, IProgressMonitor monitor,
+            WMTRenderJob renderJob, TileRange range, RasterSymbolizer style, int tileWorth,
+            int thisid, Set<String> notRenderedTiles, Set<String> renderedTiles) throws Exception {
+        checkCancelState(monitor, thisid, false);            
+        
+        // set the listener on the tile range
+        range.addListener(listener);
+        
+        // load the missing tiles by sending requests for them
+        range.loadTiles(monitor);
+        
+        // block until all the missing tiles have come through (and draw them
+        // as they are added to the blocking queue
+        while (!notRenderedTiles.isEmpty()) {
+            // check that the rendering is not canceled
+            checkCancelState(monitor, thisid, true); 
+            
+            if (testing) {
+                System.out.println("BLOCKED: "+thisid); //$NON-NLS-1$
+                System.out.println("waiting on: " + notRenderedTiles.size()+" tiles"); //$NON-NLS-1$ //$NON-NLS-2$
+            }
+            
+            Tile tile = null;
+            try {
+                Object element = null;
                 
-                // set the listener on the tile range
-                range.addListener(listener);
+                /* get the next tile that is ready to render, 
+                 * check after 1 sec if the rendering was canceled
+                 */
+                while ((element = tilesToDraw_queue.poll(1000, TimeUnit.MILLISECONDS)) == null) {
+                    checkCancelState(monitor, thisid, true); 
+                }
                 
-                // load the missing tiles by sending requests for them
-                range.loadTiles(monitor);
-                
-                // block until all the missing tiles have come through (and draw them
-                // as they are added to the blocking queue
-                while (!notRenderedTiles.isEmpty()) {
-                    // check that the rendering is not canceled
-                    if (monitor.isCanceled()) {
-                        setState(CANCELLED);       
-                        if (testing) {
-                            System.out.println("monitor CANCELED!!! (tilesToDraw_queue.clear()-1): "+thisid); //$NON-NLS-1$
-                        }
-                        tilesToDraw_queue.clear(); // todo: really clear the list?
-                        return;
-                    } 
-                    
-                    if (testing) {
-                        System.out.println("BLOCKED: "+thisid); //$NON-NLS-1$
-                        System.out.println("waiting on: " + notRenderedTiles.size()+" tiles"); //$NON-NLS-1$ //$NON-NLS-2$
-                    }
-                    
-                    Tile tile = null;
-                    try {
-                        tile = (Tile) tilesToDraw_queue.take();  // blocks until a tile is ready to take
-                        if (testing) {
-                            System.out.println("removed from queue: "+tile.getId()); //$NON-NLS-1$
-                        }
-                    } catch (InterruptedException ex) {
-                        if (testing) {
-                            System.out.println("InterruptedException trying to take: "+ex); //$NON-NLS-1$
-                        }
-                    }
-                    
-                    if (testing) {
-                        System.out.println("UNBLOCKED!!!: "+thisid); //$NON-NLS-1$
-                    }
-                    
-                    // check that the rendering is not canceled again after block
-                    if (monitor.isCanceled()) {
-                        setState(CANCELLED);     
-                        if (testing) {
-                            System.out.println("monitor CANCELED!!! (tilesToDraw_queue.clear()-2): "+thisid); //$NON-NLS-1$
-                        }
-                        
-                        tilesToDraw_queue.clear(); // todo: same here, really clear?!
-                        return;
-                    }
-                    
-                    // check that the tile's bounds are within the current
-                    // context's bounds (if it's not, don't bother drawing it) and also
-                    // only draw tiles that haven't already been drawn (panning fast
-                    // can result in listeners being notified the same tile is ready multiple
-                    // times but we don't want to draw it more than once per render cycle)
-                    //ReferencedEnvelope viewbounds = getContext().getViewportModel().getBounds();
-                    
-                    // todo: check if we are on the same zoom-level!
-                    
-                    ReferencedEnvelope viewbounds = getProjectedEnvelope(getContext().getImageBounds(), 
-                            crsTiles, transformMapToTileCrs);
-                    if (tile != null && tile.getBufferedImage() != null &&
-                            viewbounds != null && 
-                            viewbounds.intersects(tile.getBounds()) && 
-                            !renderedTiles.contains(tile.getId())) {
-                        try {
-                            renderedTiles.add(tile.getId());
-                            renderTile(destination, (WMTTile) tile, style, crsMap, crsTilesProjected, 
-                                    transformTileCrsToTilesProjected, transformTilesProjectedToMap);
-                            
-                        } catch(Exception exc) {
-                            WMTPlugin.log("[BasicWMTRender.render] renderTile failed (2): " + tile.getId(), exc); //$NON-NLS-1$
-                        }
-                        monitor.worked(tileWorth);  // inc the monitor work by 1 tile
-                        setState(RENDERING); // tell renderer new data is ready                
-                    }
-                    
-                    // remove the tile from the not rendered list regardless
-                    // of whether it was actually drawn (this is to prevent
-                    // this render cycle from blocking endlessly waiting for tiles
-                    // that either didn't return or had some error)
-                    notRenderedTiles.remove(tile.getId());
+                tile = (Tile) element;
+
+                if (testing) {
+                    System.out.println("removed from queue: "+tile.getId()); //$NON-NLS-1$
+                }
+            } catch (InterruptedException ex) {
+                if (testing) {
+                    System.out.println("InterruptedException trying to take: "+ex); //$NON-NLS-1$
                 }
             }
             
             if (testing) {
-                System.out.println("DONE!!!: "+thisid); //$NON-NLS-1$
+                System.out.println("UNBLOCKED!!!: "+thisid); //$NON-NLS-1$
             }
-        
-    }catch (Exception ex){
-        WMTPlugin.log("Error rendering WMT.", ex); //$NON-NLS-1$
+            
+            // check that the rendering is not canceled again after block
+            checkCancelState(monitor, thisid, true); 
+            
+            // check that the tile's bounds are within the current
+            // context's bounds (if it's not, don't bother drawing it) and also
+            // only draw tiles that haven't already been drawn (panning fast
+            // can result in listeners being notified the same tile is ready multiple
+            // times but we don't want to draw it more than once per render cycle)
+            //ReferencedEnvelope viewbounds = getContext().getViewportModel().getBounds();            
+            
+            ReferencedEnvelope viewbounds = renderJob.projectMapToTileCrs(
+                    context.getViewportModel().getBounds()); 
+            
+            if (tile != null && tile.getBufferedImage() != null &&
+                    viewbounds != null && 
+                    viewbounds.intersects(tile.getBounds()) && 
+                    !renderedTiles.contains(tile.getId()) &&
+                    notRenderedTiles.contains(tile.getId())) {
+                try {
+                    renderedTiles.add(tile.getId());
+                    renderTile(destination, (WMTTile) tile, style, renderJob);
+                    
+                } catch(Exception exc) {
+                    WMTPlugin.log("[BasicWMTRender.render] renderTile failed (2): " + tile.getId(), exc); //$NON-NLS-1$
+                }
+                monitor.worked(tileWorth);  // inc the monitor work by 1 tile
+                setState(RENDERING); // tell renderer new data is ready                
+            }
+            
+            // remove the tile from the not rendered list regardless
+            // of whether it was actually drawn (this is to prevent
+            // this render cycle from blocking endlessly waiting for tiles
+            // that either didn't return or had some error)
+            notRenderedTiles.remove(tile.getId());
+        }
     }
-    
-    monitor.done();
-    setState(DONE);   
-        
 
+    private void checkCancelState(IProgressMonitor monitor, int thisid, boolean clearList ) {
+        if (monitor.isCanceled()) {
+//                        setState(CANCELLED);       
+            if (testing) {
+                System.out.println("monitor CANCELED!!! (tilesToDraw_queue.clear()-1): "+thisid); //$NON-NLS-1$
+            }
+            
+            if (clearList) {
+                tilesToDraw_queue.clear(); 
+            }
+            
+            throw new CancellationException();
+        }
+    }
+
+    private void renderReadyTiles( Graphics2D destination, IProgressMonitor monitor,
+            WMTRenderJob renderJob, RasterSymbolizer style, int tileWorth, int thisid,
+            Map<String, Tile> tiles, Set<String> notRenderedTiles, Set<String> renderedTiles )
+            throws Exception {
+        for (String key : tiles.keySet()) {
+            checkCancelState(monitor, thisid, false);
+            
+            Tile tile = tiles.get(key);
+            if (tile != null && tile.getBufferedImage() != null && tile.getTileState() != WMSTile.INERROR) {
+                try {
+                    renderedTiles.add(key);
+                    renderTile(destination, (WMTTile) tile, style, renderJob);
+                } catch(Exception exc) {
+                    WMTPlugin.log("[BasicWMTRender.render] renderTile failed (1): " + tile.getId(), exc); //$NON-NLS-1$
+                }
+                monitor.worked(tileWorth);  // inc the monitor work by 1 tile
+            }
+            else {
+                // set the tile blank (removing any previous content) and add it
+                // to be drawn later
+                notRenderedTiles.add(key);
+                renderBlankTile(destination, (WMTTile) tile, renderJob);
+            }
+        }
+    }
+
+    private TileRange createTileRange( WMTSource wmtSource, WMTRenderJob renderJob,
+            Map<String, Tile> tileList ) {
+        TileRange range;
+        TileSet tileset = new WMTTileSetWrapper(wmtSource);
+    
+        String value = CatalogPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.P_WMSCTILE_CACHING);
+        if (value.equals(WMSCTileCaching.ONDISK.toString())) {
+            String dir = CatalogPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.P_WMSCTILE_DISKDIR);
+            WMTTileImageReadWriter tileReadWriter = new WMTTileImageReadWriter(dir);
+            
+            range = new TileRangeOnDisk(null, tileset, renderJob.getMapExtentTileCrs(), 
+                    tileList, requestTileWorkQueue, writeTileWorkQueue, tileReadWriter);
+        } else {
+            range = new TileRangeInMemory(null, tileset, renderJob.getMapExtentTileCrs(),
+                    tileList, requestTileWorkQueue);
+        }
+        
+        return range;
+    }
+
+    private Map<String, Tile> checkTooManyTiles(ILayer layer, WMTSource wmtSource,
+            WMTLayerProperties layerProperties, WMTRenderJob renderJob, Map<String, Tile> tileList ) {
+        int tilesCount = tileList.size();
+        if (tilesCount > WARNING_TOO_MANY_TILES) {
+            // too many tiles, let's use the recommended zoom-level
+            tileList.clear();
+            tileList = wmtSource.cutExtentIntoTiles(renderJob, WMTSource.SCALE_FACTOR, true, layerProperties);                
+            tilesCount = tileList.size();
+            
+            // show a warning about this
+            layer.setStatus(ILayer.WARNING);
+            layer.setStatusMessage(Messages.Render_Warning_TooManyTiles);
+            
+            WMTPlugin.trace("[BasicWMTRender.render] Set WARNING_TOO_MANY_TILES"); //$NON-NLS-1$
+        }
+                    
+        if (tilesCount > ERROR_TOO_MANY_TILES) {
+            // this is just too much, cancel            
+            WMTPlugin.trace("[BasicWMTRender.render] Set ERROR_TOO_MANY_TILES"); //$NON-NLS-1$
+            
+            return Collections.emptyMap();                
+        }
+        
+        return tileList;
+    }
+
+    private void setDone( IProgressMonitor monitor ) {
+        setState(DONE);
+        monitor.done();
     }
     
+    private WMTSource getWmtSourceFromLayer(ILayer layer) {
+        IGeoResource resource = layer.findGeoResource(WMTSource.class);
+        
+        if (resource != null) {
+            WMTSource wmtSource = null;
+            try {            
+                wmtSource = resource.resolve(WMTSource.class, null);
+                
+                return wmtSource;
+            } catch (Exception e) {}
+        }
+        
+        return null;
+    }
+
     /**
      * 
      * @see net.refractions.udig.render.internal.wmsc.basic#renderTile(Graphics2D graphics, WMTTile tile, CoordinateReferenceSystem crs, RasterSymbolizer style)
@@ -424,9 +468,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
      * @throws RenderException 
      */
     private void renderTile(Graphics2D graphics, WMTTile tile, RasterSymbolizer style,
-            CoordinateReferenceSystem crsMap, CoordinateReferenceSystem crsTilesProjected,
-            MathTransform transformTileCrsToTilesProjected, MathTransform transformTilesProjectedToMap) 
-            throws FactoryException, TransformException, RenderException {
+            WMTRenderJob renderJob) throws Exception {
         
         if (tile == null || tile.getBufferedImage() == null) {
             return;
@@ -436,8 +478,7 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
         GridCoverageFactory factory = new GridCoverageFactory();
         
         // get the tile bounds in the CRS the tiles were drawn in
-        ReferencedEnvelope tileBndsMercatorRef = getProjectedEnvelope(tile.getExtent(), 
-                crsTilesProjected, transformTileCrsToTilesProjected); 
+        ReferencedEnvelope tileBndsMercatorRef = renderJob.projectTileToTileProjectedCrs(tile.getExtent());
         
         GridCoverage2D coverage = (GridCoverage2D) factory.create("GridCoverage", tile.getBufferedImage(), tileBndsMercatorRef); //$NON-NLS-1$        
          
@@ -445,11 +486,10 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
 
         // bounds of tile
         ReferencedEnvelope bnds = new ReferencedEnvelope(coveragebounds.getMinX(), coveragebounds.getMaxX(), 
-                coveragebounds.getMinY(), coveragebounds.getMaxY(), crsTilesProjected);
+                coveragebounds.getMinY(), coveragebounds.getMaxY(), renderJob.getCrsTilesProjected());
         
         // reproject tile bounds to map CRS
-        bnds = getProjectedEnvelope(bnds, crsMap, transformTilesProjectedToMap);
-       
+        bnds = renderJob.projectTileProjectedToMapCrs(bnds);
 
         //determine screen coordinates of tiles
         Point upperLeft = getContext().worldToPixel(new Coordinate(bnds.getMinX(), bnds.getMinY()));
@@ -491,15 +531,15 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
      * @throws RenderException 
      */
     private void renderBlankTile(Graphics2D graphics, WMTTile tile,
-            CoordinateReferenceSystem crsMap, MathTransform transformTileCrsToMap) 
-    throws FactoryException, TransformException, RenderException {
+            WMTRenderJob renderJob) 
+    throws Exception {
         
         if (tile == null) {
             return;
         }
         
         // get the bounds of the tile and convert to necessary viewport projection
-        Envelope bnds = getProjectedEnvelope(tile.getExtent(), crsMap, transformTileCrsToMap);
+        Envelope bnds = renderJob.projectTileToMapCrs(tile.getExtent()); 
         
         // determine screen coordinates of tiles
         Point upperLeft = getContext().worldToPixel(new Coordinate(bnds.getMinX(), bnds.getMinY()));
@@ -522,69 +562,14 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
             }
         } catch (Throwable t) {
             t.printStackTrace();
-            WmsPlugin.log("Error Rendering Blank tile. Painting Tile", t); //$NON-NLS-1$
+            WMTPlugin.log("Error Rendering Blank tile. Painting Tile", t); //$NON-NLS-1$
         }
     } 
     
     /**
-     * Returns the transformation to convert between these two CRS's.
-     *
-     * @param fromCRS
-     * @param toCRS
-     * @return
-     * @throws RenderException
-     */
-    private MathTransform getTransformation(CoordinateReferenceSystem fromCRS, 
-            CoordinateReferenceSystem toCRS) throws RenderException {
-        if(!fromCRS.equals(toCRS)) {
-            try {
-                return CRS.findMathTransform(fromCRS, toCRS);
-            } catch(Exception exc) {
-                // no transformation possible
-                throw new RenderException("Reprojecting error " + exc.getMessage()); //$NON-NLS-1$
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Returns the envelope in the requested CRS, if necessary using the
-     * transformation.
-     *
-     * @param envelope
-     * @param destinationCRS
-     * @param transformation
-     * @return
-     * @throws RenderException
-     */
-    private ReferencedEnvelope getProjectedEnvelope(ReferencedEnvelope envelope, 
-            CoordinateReferenceSystem destinationCRS, 
-            MathTransform transformation) throws RenderException {
-        CoordinateReferenceSystem sourceCRS = envelope.getCoordinateReferenceSystem();
-        
-        if(sourceCRS.equals(destinationCRS)) {
-            // no need to reproject
-            return envelope;
-        } else {         
-            // Reproject envelope: first try JTS.transform, if that fails use ReferencedEnvelope.transform
-            try {
-                return new ReferencedEnvelope(JTS.transform(envelope, transformation), destinationCRS);
-                
-            } catch(Exception exc1) {
-                try {
-                    return envelope.transform(destinationCRS, false);
-                } catch(Exception exc2) {
-                    throw new RenderException("Transformation error: " + exc2.getMessage()); //$NON-NLS-1$
-                }
-            }
-        }
-    }
-    
-    /**
      * TileListener implementation for rendering new tiles that are ready
      * 
-     * todo: this is a plain copy of the BasiWMSCRenderer implementation!!
+     * This is a plain copy of the BasiWMSCRenderer implementation!
      * 
      * 
      * @author GDavis
@@ -622,9 +607,5 @@ public class BasicWMTRenderer extends RendererImpl implements IMultiLayerRendere
                
             }
         }        
-    }
-    
-    public void refreshImage() throws RenderException {
-        WMTPlugin.trace("[BasicWMTRenderer.refreshImage] is called"); //$NON-NLS-1$
     }
 }

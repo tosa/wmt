@@ -229,4 +229,8 @@ public class WMTScaleZoomLevelMatcher {
         //assert(boundsInTileCrs.getCoordinateReferenceSystem().equals(crsTiles));
         return WMTRenderJob.getProjectedEnvelope(boundsInTileCrs, crsMap, transformTileCrsToMap);
     }
+
+    public ReferencedEnvelope projectMapToTileCrs(ReferencedEnvelope boundsInMapCrs) throws Exception {
+        return WMTRenderJob.getProjectedEnvelope(boundsInMapCrs, crsTiles, transformMapToTileCrs);
+    }
 }

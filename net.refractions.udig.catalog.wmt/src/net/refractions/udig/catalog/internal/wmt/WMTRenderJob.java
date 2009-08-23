@@ -1,7 +1,6 @@
 package net.refractions.udig.catalog.internal.wmt;
 
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WMTSource;
-import net.refractions.udig.project.render.RenderException;
 
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
@@ -9,20 +8,29 @@ import org.geotools.referencing.CRS;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 
+/**
+ * This class wraps together the information needed to 
+ * process a render call:
+ *  - the map extent
+ *  - CRS's
+ *  - transformations between the CRS's
+ *  - the scale
+ * 
+ * @author to.srwn
+ * @since 1.1.0
+ */
 public class WMTRenderJob {
 
     /** the CRS the tiles were projected in (TilesProjectedCrs) */
     private CoordinateReferenceSystem crsTilesProjected; 
-               
-
+           
     /** Transformation: TileCrs (mostly WGS_84) -> TilesProjectedCrs (mostly Google's Mercator) */
     private MathTransform transformTileCrsToTilesProjected;                
     /** Transformation: TilesProjectedCrs (mostly Google's Mercator) -> MapCrs */
     private MathTransform transformTilesProjectedToMap; 
     
-
-    
     private WMTScaleZoomLevelMatcher zoomLevelMatcher;
+    
     
     public WMTRenderJob(
             CoordinateReferenceSystem crsTilesProjected, 
@@ -36,13 +44,13 @@ public class WMTRenderJob {
         this.transformTilesProjectedToMap = transformTilesProjectedToMap;
     }
        
-    public static WMTRenderJob createRenderJob(ReferencedEnvelope mapExtentMapCrs, double scale, WMTSource wmtSource) throws Exception {
+    public static WMTRenderJob createRenderJob(ReferencedEnvelope mapExtentMapCrs, 
+            double scale, WMTSource wmtSource) throws Exception {
         WMTScaleZoomLevelMatcher zoomLevelMatcher = 
             WMTScaleZoomLevelMatcher.createMatcher(mapExtentMapCrs, scale, wmtSource);
   
         CoordinateReferenceSystem crsTilesProjected = wmtSource.getProjectedTileCrs(); // the CRS the tiles were projected in
         
-        // get transformations for reprojections between the CRS's 
         // Transformation: TileCrs (mostly WGS_84) -> TilesProjectedCrs (mostly Google's Mercator)
         MathTransform transformTileCrsToTilesProjected = 
             getTransformation(zoomLevelMatcher.getCrsTiles(), crsTilesProjected);
@@ -65,11 +73,41 @@ public class WMTRenderJob {
     public ReferencedEnvelope getMapExtentTileCrs() {
         return zoomLevelMatcher.getMapExtentTileCrs();
     }    
-    
-    private ReferencedEnvelope projectTileToMapCrs(ReferencedEnvelope boundsInTileCrs) throws Exception {
+            
+    public CoordinateReferenceSystem getCrsTilesProjected() {
+        return crsTilesProjected;
+    }   
+            
+    public CoordinateReferenceSystem getCrsMap() {
+        return zoomLevelMatcher.getCrsMap();
+    }
+
+    public ReferencedEnvelope projectTileToMapCrs(ReferencedEnvelope boundsInTileCrs) throws Exception {
         return zoomLevelMatcher.projectTileToMapCrs(boundsInTileCrs);
+    } 
+    
+    public ReferencedEnvelope projectMapToTileCrs(ReferencedEnvelope boundsInMapCrs) throws Exception {
+        return zoomLevelMatcher.projectMapToTileCrs(boundsInMapCrs);
     }
     
+    public ReferencedEnvelope projectTileToTileProjectedCrs(ReferencedEnvelope boundsInTileCrs) throws Exception {
+        return getProjectedEnvelope(boundsInTileCrs, crsTilesProjected, transformTileCrsToTilesProjected);
+    }
+    
+    public ReferencedEnvelope projectTileProjectedToMapCrs(ReferencedEnvelope boundsInTilesProjectedCrs) throws Exception {
+        return getProjectedEnvelope(boundsInTilesProjectedCrs, getCrsMap(), transformTilesProjectedToMap);
+    }
+    
+    /**
+     * Re-Projects the given envelope to destinationCRS
+     * using transformation.
+     *
+     * @param envelope
+     * @param destinationCRS
+     * @param transformation
+     * @return
+     * @throws Exception
+     */
     public static ReferencedEnvelope getProjectedEnvelope(
             ReferencedEnvelope envelope, 
             CoordinateReferenceSystem destinationCRS, 
@@ -78,13 +116,15 @@ public class WMTRenderJob {
         
         if(sourceCRS.equals(destinationCRS)) {
             // no need to reproject
+            
             return envelope;
         } else {         
             // Reproject envelope: first try JTS.transform, if that fails use ReferencedEnvelope.transform
-            try {
-                return new ReferencedEnvelope(JTS.transform(envelope, transformation), destinationCRS);
+            try {         
                 
-            } catch(Exception exc1) {                
+                return new ReferencedEnvelope(JTS.transform(envelope, transformation), destinationCRS);                
+            } catch(Exception exc) {   
+                
                     return envelope.transform(destinationCRS, false);
             }
         }
@@ -101,6 +141,7 @@ public class WMTRenderJob {
     public static MathTransform getTransformation(CoordinateReferenceSystem fromCRS, 
             CoordinateReferenceSystem toCRS) throws Exception {
         if(!fromCRS.equals(toCRS)) {
+            
             return CRS.findMathTransform(fromCRS, toCRS);            
         }
         
