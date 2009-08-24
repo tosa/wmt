@@ -17,6 +17,7 @@ import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.MQControl;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.OSMCloudMadeControl;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.OSMControl;
 import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.WMTWizardControl;
+import net.refractions.udig.catalog.internal.wmt.ui.wizard.controls.WWControl;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.MQSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.NASASourceManager;
@@ -294,6 +295,19 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         mq.setExpanded(true);
         //endregion
         
+        //region Add NASA WorldWind example
+        TreeItem ww = new TreeItem(tree, SWT.NONE);
+        ww.setText(Messages.Wizard_Ww_Example_Title);
+
+        WWControl wwControlFactory = new WWControl();
+        TreeItem wwTreeItem = new TreeItem(ww, SWT.NONE);        
+        wwTreeItem.setText(Messages.Wizard_Ww_Example_Demis_Title);
+        WMTWizardTreeItemData dataWW = new WMTWizardTreeItemData(null, wwControlFactory);
+        wwTreeItem.setData(dataWW);
+        
+        ww.setExpanded(true);
+        //endregion
+        
         //region Add NASA services
         TreeItem nasa = new TreeItem(tree, SWT.NONE);
         nasa.setText(NASASource.NAME);
@@ -304,8 +318,6 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
 
         nasa.setExpanded(true);
         //endregion
-        
-        //todo: add other services
         
         // Enable first service for usability reasons 
         osm.getItems()[0].setChecked(true);
