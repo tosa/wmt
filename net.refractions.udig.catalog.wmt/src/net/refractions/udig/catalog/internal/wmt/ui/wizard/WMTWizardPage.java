@@ -231,7 +231,7 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         
         //region Create tree component
         tree = new Tree(composite, SWT.BORDER | SWT.CHECK);
-        tree.setLayoutData(new RowData(200, 432));
+        tree.setLayoutData(new RowData(200, 442));
         tree.addListener(SWT.Selection, new org.eclipse.swt.widgets.Listener(){
             public void handleEvent(Event event) {
                 TreeItem item = (TreeItem) event.item;
@@ -258,7 +258,7 @@ public class WMTWizardPage extends AbstractUDIGImportPage implements UDIGConnect
         infoBox = new Composite(composite, SWT.NONE);
         stackLayoutInfoBox = new StackLayout();
         infoBox.setLayout(stackLayoutInfoBox);
-        infoBox.setLayoutData(new RowData(430, 460));
+        infoBox.setLayoutData(new RowData(430, 470));
         //endregion
         
         //region Add OpenStreeMap services

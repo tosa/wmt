@@ -31,7 +31,7 @@ public class MQControl extends WMTWizardControl {
         
         Link link = new Link(control, SWT.BORDER);
         link.setText(Messages.Wizard_Mq_InfoLink);
-        link.setLayoutData(new RowData(400, 40));
+        link.setLayoutData(new RowData(400, 60));
         link.addListener (SWT.Selection, new Listener () {
             public void handleEvent(Event event) {
                 Program.launch("http://developer.mapquest.com/Home/FreeTermsAndConditions"); //$NON-NLS-1$

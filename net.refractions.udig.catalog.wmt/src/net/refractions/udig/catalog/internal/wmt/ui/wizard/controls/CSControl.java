@@ -66,7 +66,7 @@ public class CSControl extends WMTWizardControl {
         
         //region Description
         Link text = new Link(control, SWT.HORIZONTAL | SWT.WRAP);
-        text.setLayoutData(new RowData(400, 80));
+        text.setLayoutData(new RowData(400, 110));
         text.setText(Messages.Wizard_CS_Description);
         text.addListener (SWT.Selection, new Listener () {
             public void handleEvent(Event event) {

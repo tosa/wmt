@@ -26,7 +26,7 @@ public class OSMControl extends WMTWizardControl {
         control.setLayout(new RowLayout(SWT.VERTICAL));
         
         Label text = new Label(control, SWT.HORIZONTAL | SWT.WRAP);
-        text.setLayoutData(new RowData(400, 60));
+        text.setLayoutData(new RowData(400, 70));
         text.setText(Messages.Wizard_Osm_Info);
         
         Link link = new Link(control, SWT.BORDER);

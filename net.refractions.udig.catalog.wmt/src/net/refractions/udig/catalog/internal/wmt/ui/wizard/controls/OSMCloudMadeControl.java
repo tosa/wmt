@@ -217,7 +217,7 @@ public class OSMCloudMadeControl extends WMTWizardControl {
         
         link = new Link(composite, SWT.BORDER);
         link.setText(Messages.Wizard_CloudMade_StyleEditorInfo);
-        link.setLayoutData(new RowData(400, 40));
+        link.setLayoutData(new RowData(400, 50));
         link.addListener (SWT.Selection, new Listener () {
             public void handleEvent(Event event) {
                 Program.launch("http://maps.cloudmade.com/editor"); //$NON-NLS-1$

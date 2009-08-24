@@ -174,7 +174,7 @@ public class WMTTilePreferencesPage extends FieldEditorPreferencePage implements
 
         Label lblTileLimitExpl = new Label (grpTileLimit, SWT.HORIZONTAL | SWT.WRAP);
         lblTileLimitExpl.setText(Messages.Preferences_TileLimit_Description);
-        lblTileLimitExpl.setLayoutData(new RowData(400, 70));
+        lblTileLimitExpl.setLayoutData(new RowData(400, 90));
         //endregion
 
         //region Reset LayoutManagers (they are set to GridLayout when the field is added)
