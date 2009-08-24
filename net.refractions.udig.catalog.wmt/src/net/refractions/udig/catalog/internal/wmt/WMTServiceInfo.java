@@ -25,8 +25,8 @@ class WMTServiceInfo extends IServiceInfo {
 
     WMTServiceInfo( WMTService service, IProgressMonitor monitor) {
         this.title = service.getIdentifier().toString();
-        this.description = "WMT Description";
-        this.keywords = new String[]{"WMT"};        
+        this.description = "Web Map Tiles"; //$NON-NLS-1$
+        this.keywords = new String[]{"Web Map Tiles"};         //$NON-NLS-1$
     }
     
 }

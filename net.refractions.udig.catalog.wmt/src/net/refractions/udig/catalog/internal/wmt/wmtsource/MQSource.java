@@ -1,13 +1,13 @@
 package net.refractions.udig.catalog.internal.wmt.wmtsource;
 
+import net.refractions.udig.catalog.internal.wmt.tile.MQTile;
+import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
+
 import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
-import net.refractions.udig.catalog.internal.wmt.tile.MQTile;
 import com.mapquest.apiwrapper.MQAPIWrapper;
-import net.refractions.udig.catalog.internal.wmt.tile.WMTTile.WMTTileFactory;
 
 public class MQSource extends WMTSource {
     public static String NAME = "MapQuest Maps"; //$NON-NLS-1$
@@ -21,58 +21,40 @@ public class MQSource extends WMTSource {
     
 
     //region CRS
-    public static final CoordinateReferenceSystem CRS_MQ_PROJECTION;    
-    static {
-        CoordinateReferenceSystem crs = null;
-        
-        String wkt =
-                "PROJCS[\"MapQuest Projection\"," +
-                "   GEOGCS[\"GCS_ADG_1984\"," +
-                "       DATUM[\"D_Australian_1984\"," +
-                "           SPHEROID[\"Australian\",6378137.0,298.25]" +
-                "       ]," +
-                "       PRIMEM[\"Greenwich\",0.0]," +
-                "       UNIT[\"Degree\",0.0174532925199433]" +
-                "   ]," +
-                "PROJECTION[\"Equidistant_Cylindrical\"]," +
-                "PARAMETER[\"False_Easting\",0.0]," +
-                "PARAMETER[\"False_Northing\",0.0]," +
-                "PARAMETER[\"Central_Meridian\",0.0]," +
-                "PARAMETER[\"Standard_Parallel_1\",37.5]," +
-                "UNIT[\"Meter\",1.0]" +
-                "]";
+    public static final CoordinateReferenceSystem CRS_MQ_PROJECTION = DefaultGeographicCRS.WGS84;
+    /**
+     * The following would be the projection in which MQ tiles were drawn.
+     * But as uDig/Geotools does not like elliptical projections, we are
+     * using WGS84, which gives also a good result.
+     */
+//    static {
+//        CoordinateReferenceSystem crs = null;
+//        
 //        String wkt =
-//        "PROJCS[\"WGS84 / EquiRectangular\", " +
-//        "      GEOGCS[\"WGS 84\", " +
-//        "          DATUM[\"WGS_1984\", " +
-//        "              SPHEROID[\"WGS_1984\", 6378156.743315, 1.0]" +
-//        "          ], " +
-//        "          PRIMEM[\"Greenwich\", 0.0], " +
-//        "          UNIT[\"degree\", 0.017453292519943295], " +
-//        "          AXIS[\"Longitude\", EAST], " +
-//        "          AXIS[\"Latitude\", NORTH]" +
-//        "      ], " +
-//        "      PROJECTION[\"Equirectangular\"], " +
-//        "      PARAMETER[\"latitude_of_origin\", 37.5],   " +            
-//        "      PARAMETER[\"central_meridian\", 0.0], " +
-//        "      PARAMETER[\"false_easting\", 0.0], " +
-//        "      PARAMETER[\"false_northing\", 0.0], " +
-//        "      UNIT[\"m\", 1.0], " +
-//        "      AXIS[\"x\", EAST], " +
-//        "      AXIS[\"y\", NORTH] " +
-//        "  ] ";
-
-
-        
-            try {
-                crs = CRS.parseWKT(wkt);
-            } catch (Exception exc2) {
-                System.out.println("-------------------------: " + exc2.getMessage());
-                crs = DefaultGeographicCRS.WGS84;
-            }
-        
-        CRS_MQ_PROJECTION = crs;
-    }
+//                "PROJCS[\"MapQuest Projection\"," +
+//                "   GEOGCS[\"GCS_ADG_1984\"," +
+//                "       DATUM[\"D_Australian_1984\"," +
+//                "           SPHEROID[\"Australian\",6378137.0,298.25]" +
+//                "       ]," +
+//                "       PRIMEM[\"Greenwich\",0.0]," +
+//                "       UNIT[\"Degree\",0.0174532925199433]" +
+//                "   ]," +
+//                "PROJECTION[\"Equidistant_Cylindrical\"]," +
+//                "PARAMETER[\"False_Easting\",0.0]," +
+//                "PARAMETER[\"False_Northing\",0.0]," +
+//                "PARAMETER[\"Central_Meridian\",0.0]," +
+//                "PARAMETER[\"Standard_Parallel_1\",37.5]," +
+//                "UNIT[\"Meter\",1.0]" +
+//                "]";      
+//            try {
+//                crs = CRS.parseWKT(wkt);
+//            } catch (Exception exc2) {
+//                WMTPlugin.log("[MQSource] Could not load MapQuest projection", exc2);
+//                crs = DefaultGeographicCRS.WGS84;
+//            }
+//        
+//        CRS_MQ_PROJECTION = crs;
+//    }
     
     public CoordinateReferenceSystem getProjectedTileCrs() {
         return CRS_MQ_PROJECTION;

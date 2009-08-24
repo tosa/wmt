@@ -171,7 +171,7 @@ public abstract class WMTTile implements Tile{
         if (getBufferedImage() != null) {
             return true;
         }
-        System.out.println("// if we get here, something prevented us from setting an image");
+        System.out.println("// if we get here, something prevented us from setting an image"); //$NON-NLS-1$
         // if we get here, something prevented us from setting an image
         return false;
     }
