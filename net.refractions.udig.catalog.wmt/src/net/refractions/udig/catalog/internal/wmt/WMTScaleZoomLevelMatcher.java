@@ -124,6 +124,8 @@ public class WMTScaleZoomLevelMatcher {
         
         // Start with the most detailed zoom-level and search the best-fitting one
         int zoomLevel = scaleList.length - 1;
+        getOptimumScaleFromZoomLevel(zoomLevel, wmtSource, tempScaleList);
+        
         for (int i = scaleList.length-2; i >= 0; i--) {
             if (Double.isNaN(scaleList[i])) {
                 break;

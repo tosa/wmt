@@ -2,6 +2,7 @@ package net.refractions.udig.tests.catalog.wmt;
 
 import java.util.Map;
 
+import net.refractions.udig.catalog.internal.wmt.WMTRenderJob;
 import net.refractions.udig.catalog.internal.wmt.tile.WWTile;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.WWSource;
 import net.refractions.udig.catalog.internal.wmt.wmtsource.ww.QuadTileSet;
@@ -25,22 +26,29 @@ public class WWSourceTest extends TestCase {
         WWSource wwSource = new WWSource(quadTileSet);
         
         // extent is not covered from QuadTileSet
-        Map<String, Tile> tiles1 = wwSource.cutExtentIntoTiles(new ReferencedEnvelope(1, 2, 48, 49, DefaultGeographicCRS.WGS84), 
+        WMTRenderJob renderJob1 = WMTRenderJob.createRenderJob(
+                new ReferencedEnvelope(1, 2, 48, 49, DefaultGeographicCRS.WGS84), 
                 10000, 
+                wwSource);
+        
+        Map<String, Tile> tiles1 = wwSource.cutExtentIntoTiles(renderJob1, 
                 50, 
                 true, null);
         assertEquals(true, tiles1.isEmpty());
         
         // bounds of the QuadTileSet are inside the extent
-        Map<String, Tile> tiles2 = wwSource.cutExtentIntoTiles(new ReferencedEnvelope(18.34, 18.4, -33.85, -33.5, DefaultGeographicCRS.WGS84), 
+        WMTRenderJob renderJob2 = WMTRenderJob.createRenderJob(
+                new ReferencedEnvelope(18.34, 18.4, -33.85, -33.5, DefaultGeographicCRS.WGS84), 
                 20000000, 
+                wwSource);
+        Map<String, Tile> tiles2 = wwSource.cutExtentIntoTiles(renderJob2, 
                 50, 
                 true, null);
         assertEquals(1, tiles2.size());
     }
     
 
-    public void testCutExtentInTilesWholeWorld() throws Exception {
+    public void testTileFromCoordinateWholeWorld() throws Exception {
         Element rootElement = QuadTileSetTest.getRootElement();
         QuadTileSet quadTileSet = new QuadTileSet(rootElement.getChild("ChildLayerSet").getChild("QuadTileSet"), "");
         
